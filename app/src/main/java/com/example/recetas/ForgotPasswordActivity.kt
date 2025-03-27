@@ -3,11 +3,12 @@ package com.example.recetas
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,9 +20,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 
 class ForgotPasswordActivity : AppCompatActivity() {
-    private lateinit var etEmail: EditText
-    private lateinit var btnRecoverPassword: Button
-    private lateinit var progressBar: ProgressBar
+    private lateinit var etEmail: TextInputEditText
+    private lateinit var btnRecoverPassword: MaterialButton
+    private lateinit var progressBar: CircularProgressIndicator
     private val client = OkHttpClient()
     private val BASE_URL = "https://desarrollo-apps-1-back-end.vercel.app"
     private val TAG = "ForgotPasswordDebug"
@@ -47,7 +48,7 @@ class ForgotPasswordActivity : AppCompatActivity() {
 
     private fun setLoadingState(isLoading: Boolean) {
         btnRecoverPassword.isEnabled = !isLoading
-        progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         etEmail.isEnabled = !isLoading
     }
 

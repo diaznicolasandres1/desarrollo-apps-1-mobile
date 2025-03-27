@@ -3,11 +3,12 @@ package com.example.recetas
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
+import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -18,10 +19,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 class ChangePasswordActivity : AppCompatActivity() {
-    private lateinit var etNewPassword: EditText
-    private lateinit var etConfirmPassword: EditText
-    private lateinit var btnChangePassword: Button
-    private lateinit var progressBar: ProgressBar
+    private lateinit var etNewPassword: TextInputEditText
+    private lateinit var etConfirmPassword: TextInputEditText
+    private lateinit var btnChangePassword: MaterialButton
+    private lateinit var progressBar: CircularProgressIndicator
     private val client = OkHttpClient()
     private val BASE_URL = "https://desarrollo-apps-1-back-end.vercel.app"
     private val TAG = "ChangePasswordDebug"
@@ -67,7 +68,7 @@ class ChangePasswordActivity : AppCompatActivity() {
 
     private fun setLoadingState(isLoading: Boolean) {
         btnChangePassword.isEnabled = !isLoading
-        progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         etNewPassword.isEnabled = !isLoading
         etConfirmPassword.isEnabled = !isLoading
     }

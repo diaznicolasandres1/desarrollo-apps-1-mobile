@@ -1,5 +1,6 @@
 package com.example.recetas
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -17,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -47,6 +49,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home() {
+    val context = LocalContext.current
     val categories = listOf(
         Category("Vegetariano", "https://images.vexels.com/media/users/3/224278/isolated/preview/22f4e4a713fba3ddfcedf96572ad8254-logotipo-de-comida-vegetariana.png", 1),
         Category("Postres", "https://cdn-icons-png.flaticon.com/512/7182/7182828.png",2),
@@ -67,9 +70,19 @@ fun Home() {
                     verticalAlignment = Alignment.CenterVertically
                 ){
                     IconButton(
-                        onClick = { /* TODO: Acción del icono */ }
+                        onClick = { 
+                            // Limpiar las preferencias de sesión
+                            context.getSharedPreferences("LoginPrefs", android.content.Context.MODE_PRIVATE)
+                                .edit()
+                                .clear()
+                                .apply()
+                            
+                            // Navegar al login
+                            context.startActivity(Intent(context, LoginActivity::class.java))
+                            (context as? ComponentActivity)?.finish()
+                        }
                     ) {
-                        Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = "Search")
+                        Icon(imageVector = Icons.Filled.AccountCircle, contentDescription = "Cerrar sesión")
                     }
 
                     IconButton(
@@ -231,7 +244,7 @@ fun RecipeItem() {
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Postre de chocolate Postre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolate",
+                        text = "Postre de chocolate Postre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolatePostre de chocolate",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 2,
