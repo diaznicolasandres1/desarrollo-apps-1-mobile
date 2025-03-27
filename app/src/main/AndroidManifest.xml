@@ -15,11 +15,9 @@
         android:theme="@style/Theme.Recetas"
         tools:targetApi="31">
         <activity
-            android:name=".SplashScreenActivity"
+            android:name=".LoginActivity"
             android:exported="true"
-            android:theme="@style/Theme.Recetas"
-
-            >
+            android:theme="@style/Theme.Recetas">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -28,8 +26,19 @@
         <activity
             android:name=".MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.Recetas"
-            />
+            android:theme="@style/Theme.Recetas"/>
+        <activity
+            android:name=".ForgotPasswordActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Recetas"/>
+        <activity
+            android:name=".VerifyCodeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Recetas"/>
+        <activity
+            android:name=".ChangePasswordActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Recetas"/>
     </application>
 
 </manifest>
