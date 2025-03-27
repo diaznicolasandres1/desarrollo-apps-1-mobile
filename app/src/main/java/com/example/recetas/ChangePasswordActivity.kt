@@ -2,8 +2,10 @@ package com.example.recetas
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
@@ -19,15 +21,22 @@ class ChangePasswordActivity : AppCompatActivity() {
     private lateinit var etNewPassword: EditText
     private lateinit var etConfirmPassword: EditText
     private lateinit var btnChangePassword: Button
+    private lateinit var progressBar: ProgressBar
     private val client = OkHttpClient()
+    private val BASE_URL = "https://desarrollo-apps-1-back-end.vercel.app"
+    private val TAG = "ChangePasswordDebug"
     private lateinit var email: String
+    private lateinit var recoveryCode: String
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_change_password)
 
         email = intent.getStringExtra("email") ?: ""
-        if (email.isEmpty()) {
+        recoveryCode = intent.getStringExtra("recoveryCode") ?: ""
+        
+        if (email.isEmpty() || recoveryCode.isEmpty()) {
+            Log.e(TAG, "Email o código de recuperación no proporcionados")
             finish()
             return
         }
@@ -35,6 +44,7 @@ class ChangePasswordActivity : AppCompatActivity() {
         etNewPassword = findViewById(R.id.etNewPassword)
         etConfirmPassword = findViewById(R.id.etConfirmPassword)
         btnChangePassword = findViewById(R.id.btnChangePassword)
+        progressBar = findViewById(R.id.progressBar)
 
         btnChangePassword.setOnClickListener {
             val newPassword = etNewPassword.text.toString()
@@ -48,38 +58,53 @@ class ChangePasswordActivity : AppCompatActivity() {
                     Snackbar.make(it, "Las contraseñas no coinciden", Snackbar.LENGTH_SHORT).show()
                 }
                 else -> {
+                    setLoadingState(true)
                     changePassword(newPassword)
                 }
             }
         }
     }
 
+    private fun setLoadingState(isLoading: Boolean) {
+        btnChangePassword.isEnabled = !isLoading
+        progressBar.visibility = if (isLoading) android.view.View.VISIBLE else android.view.View.GONE
+        etNewPassword.isEnabled = !isLoading
+        etConfirmPassword.isEnabled = !isLoading
+    }
+
     private fun changePassword(newPassword: String) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val jsonBody = "{\"email\":\"$email\",\"password\":\"$newPassword\"}"
+                val jsonBody = "{\"email\":\"$email\",\"newPassword\":\"$newPassword\",\"recoveryCode\":\"$recoveryCode\"}"
+                Log.d(TAG, "Intentando cambiar contraseña con: $jsonBody")
+                
                 val request = Request.Builder()
-                    .url("https://api.ejemplo.com/change-password")
+                    .url("$BASE_URL/users/change-password")
                     .put(jsonBody.toRequestBody("application/json".toMediaType()))
                     .build()
 
                 val response = client.newCall(request).execute()
+                val responseBody = response.body?.string()
+                Log.d(TAG, "Código de respuesta: ${response.code}")
+                Log.d(TAG, "Cuerpo de respuesta: $responseBody")
 
                 withContext(Dispatchers.Main) {
+                    setLoadingState(false)
                     when (response.code) {
                         200 -> {
+                            Log.d(TAG, "Contraseña cambiada exitosamente")
                             Snackbar.make(
                                 findViewById(android.R.id.content),
                                 "Contraseña cambiada exitosamente",
                                 Snackbar.LENGTH_SHORT
                             ).show()
-                            // Redirigir al login después de un breve delay
                             findViewById<android.view.View>(android.R.id.content).postDelayed({
                                 startActivity(Intent(this@ChangePasswordActivity, LoginActivity::class.java))
                                 finishAffinity()
                             }, 1500)
                         }
                         else -> {
+                            Log.d(TAG, "Error al cambiar la contraseña: ${response.code}")
                             Snackbar.make(
                                 findViewById(android.R.id.content),
                                 "Error al cambiar la contraseña",
@@ -89,7 +114,10 @@ class ChangePasswordActivity : AppCompatActivity() {
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error de conexión", e)
+                Log.e(TAG, "Mensaje de error: ${e.message}")
                 withContext(Dispatchers.Main) {
+                    setLoadingState(false)
                     Snackbar.make(
                         findViewById(android.R.id.content),
                         "Error de conexión",

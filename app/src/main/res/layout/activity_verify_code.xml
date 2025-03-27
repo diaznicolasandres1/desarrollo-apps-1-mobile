@@ -20,7 +20,16 @@
         android:text="Verificar código"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:layout_marginBottom="32dp"/>
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:id="@+id/tvEmailInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Se ha enviado un código de 6 dígitos a tu email"
+        android:textSize="16sp"
+        android:textColor="#757575"
+        android:layout_marginBottom="24dp"/>
 
     <EditText
         android:id="@+id/etVerificationCode"
@@ -32,23 +41,10 @@
         android:gravity="center"
         android:layout_marginBottom="24dp"/>
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <Button
-            android:id="@+id/btnVerifyCode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Verificar código"/>
-
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:visibility="gone"/>
-
-    </FrameLayout>
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:visibility="gone"/>
 
 </LinearLayout> 
