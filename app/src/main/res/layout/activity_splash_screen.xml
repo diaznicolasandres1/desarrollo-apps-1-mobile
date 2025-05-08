@@ -10,6 +10,7 @@
     tools:context=".SplashScreenActivity">
 
     <ImageView
+        android:contentDescription="@string/Logo"
         android:id="@+id/splash_logo"
         android:layout_width="300dp"
         android:layout_height="300dp"
@@ -51,6 +52,6 @@
         android:layout_marginBottom="16dp"
         android:textSize="12sp"
         android:textColor="@color/black"
-        android:text="Desarrollado por el grupo 3" />
+        android:text="@string/developed_by" />
 
 </LinearLayout>
