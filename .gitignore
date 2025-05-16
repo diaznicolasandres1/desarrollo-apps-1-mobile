@@ -20,6 +20,9 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+.idea
+.vscode
+.gradle
 
 # debug
 npm-debug.*
