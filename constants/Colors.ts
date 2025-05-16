@@ -4,23 +4,13 @@
  */
 
 export const Colors = {
-  light: {
-    text: "#11181C",
-    background: "#FFF3E0", // Orange 50
-    tint: "#FF9800", // Orange 500
-    icon: "#687076",
-    tabIconDefault: "#687076",
-    tabIconSelected: "#FF9800", // Orange 500
-  },
-  dark: {
-    text: "#ECEDEE",
-    background: "#495B43", // Olive 800
-    tint: "#E65100", // Orange 900
-    icon: "#9BA1A6",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: "#E65100", // Orange 900
-  },
-  primary: {
+  text: "#11181C",
+  background: "#FFF3E0", // Orange 50
+  tint: "#FF9800", // Orange 500
+  icon: "#687076",
+  tabIconDefault: "#687076",
+  tabIconSelected: "#FF9800", // Orange 500
+  orange: {
     orange50: "#FFF3E0",
     orange100: "#FFE0B2",
     orange200: "#FFE0B2",
@@ -32,7 +22,7 @@ export const Colors = {
     orange800: "#EF6C00",
     orange900: "#E65100",
   },
-  secondary: {
+  olive: {
     olive50: "#F5F8F4",
     olive100: "#EDF3EC",
     olive200: "#D9E6D8",
