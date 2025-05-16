@@ -1,29 +1,31 @@
-import { PrimaryButton, SecondaryButton } from "@/components/Button";
+import { PrimaryButton } from "@/components/Button";
 import { SimpleInput } from "@/components/Input";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 import Toast from "react-native-toast-message";
 
-const LoginScreen: React.FC = () => {
-  const { login, isLoading, loginAsGuest } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
+const PasswordRecoveryEmailScreen: React.FC = () => {
   const { isConnected } = useNetworkStatus();
+  const router = useRouter();
+  const { onRecoveryCode } = useAuth();
+
+  const [isLoading, setIsLoading] = useState(false);
+
   const { control, handleSubmit, watch } = useForm<{
     email: string;
-    password: string;
   }>({
     defaultValues: {
       email: "full@test.com",
-      password: "123456",
     },
   });
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!isConnected) {
       Toast.show({
         type: "error",
@@ -31,24 +33,25 @@ const LoginScreen: React.FC = () => {
       });
       return;
     }
-    const { email, password } = watch();
-    login(email, password);
-  };
+    const { email } = watch();
 
-  const onGuestLogin = () => {
-    if (!isConnected) {
-      Toast.show({
-        type: "error",
-        text1: "No hay conexión a internet",
-      });
+    if (!email) {
       return;
     }
-    loginAsGuest();
+
+    setIsLoading(true);
+    const success = await onRecoveryCode(email);
+    setIsLoading(false);
+
+    if (success) {
+      router.push("/recover/code");
+    }
   };
 
   return (
     <View style={styles.container}>
       <Image source={require("@/assets/images/logo.png")} style={styles.icon} />
+      <Text style={styles.title}>Recuperar contraseña</Text>
       <Controller
         control={control}
         name="email"
@@ -73,44 +76,9 @@ const LoginScreen: React.FC = () => {
           />
         )}
       />
-      <Controller
-        control={control}
-        name="password"
-        defaultValue=""
-        render={({ field: { onChange, onBlur, value } }) => (
-          <SimpleInput
-            label="Contraseña"
-            helperText="Ingrese su contraseña"
-            onBlur={onBlur}
-            onChangeText={onChange}
-            value={value}
-            secureTextEntry={!showPassword}
-            right={
-              <PaperTextInput.Icon
-                icon="eye-outline"
-                onPress={() => {
-                  setShowPassword(!showPassword);
-                }}
-              />
-            }
-          />
-        )}
-      />
-      <View style={{ gap: 10 }}>
-        <PrimaryButton onPress={handleSubmit(onSubmit)} loading={isLoading}>
-          Iniciar Sesión
-        </PrimaryButton>
-        <PrimaryButton
-          mode="text"
-          textColor={Colors.orange.orange900}
-          style={{ backgroundColor: "transparent" }}
-        >
-          Recuperar contraseña
-        </PrimaryButton>
-        <SecondaryButton onPress={onGuestLogin}>
-          Ingresar como invitado
-        </SecondaryButton>
-      </View>
+      <PrimaryButton onPress={handleSubmit(onSubmit)} loading={isLoading}>
+        Enviar código
+      </PrimaryButton>
     </View>
   );
 };
@@ -120,7 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFF3E0",
+    backgroundColor: Colors.orange.orange50,
     padding: 16,
     gap: 40,
   },
@@ -129,6 +97,12 @@ const styles = StyleSheet.create({
     height: 138,
     marginBottom: 20,
   },
+  title: {
+    fontWeight: "bold",
+    fontSize: 24,
+    color: Colors.orange.orange900,
+    marginBottom: 20,
+  },
 });
 
-export default LoginScreen;
+export default PasswordRecoveryEmailScreen;
