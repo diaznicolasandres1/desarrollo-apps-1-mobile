@@ -62,6 +62,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const loginAsGuest = () => {
     setIsGuest(true);
     setIsAuthenticated(true);
+
+    Toast.show({
+      type: "success",
+      text1: "Bienvenido 👋",
+      text2: "Estás ingresando como invitado",
+    });
   };
 
   useEffect(() => {

@@ -2,14 +2,17 @@ import { PrimaryButton, SecondaryButton } from "@/components/Button";
 import { SimpleInput } from "@/components/Input";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Image, StyleSheet, View } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
+import Toast from "react-native-toast-message";
 
 const LoginScreen: React.FC = () => {
   const { login, isLoading, loginAsGuest } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const { isConnected } = useNetworkStatus();
   const { control, handleSubmit, watch } = useForm<{
     email: string;
     password: string;
@@ -21,8 +24,26 @@ const LoginScreen: React.FC = () => {
   });
 
   const onSubmit = () => {
+    if (!isConnected) {
+      Toast.show({
+        type: "error",
+        text1: "No hay conexión a internet",
+      });
+      return;
+    }
     const { email, password } = watch();
     login(email, password);
+  };
+
+  const onGuestLogin = () => {
+    if (!isConnected) {
+      Toast.show({
+        type: "error",
+        text1: "No hay conexión a internet",
+      });
+      return;
+    }
+    loginAsGuest();
   };
 
   return (
@@ -86,7 +107,7 @@ const LoginScreen: React.FC = () => {
         >
           Recuperar contraseña
         </PrimaryButton>
-        <SecondaryButton onPress={loginAsGuest}>
+        <SecondaryButton onPress={onGuestLogin}>
           Ingresar como invitado
         </SecondaryButton>
       </View>

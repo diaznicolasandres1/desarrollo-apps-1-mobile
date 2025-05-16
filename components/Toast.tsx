@@ -1,3 +1,4 @@
+import { Colors } from "@/constants/Colors";
 import { BaseToast, ErrorToast, ToastConfig } from "react-native-toast-message";
 
 export const toastConfig: ToastConfig = {
@@ -5,8 +6,8 @@ export const toastConfig: ToastConfig = {
     <BaseToast
       {...props}
       style={{
-        borderLeftColor: "green",
-        backgroundColor: "#e0ffe0",
+        borderLeftColor: "blue",
+        backgroundColor: Colors.azul.azul100,
         borderRadius: 10,
         marginBottom: 20,
       }}

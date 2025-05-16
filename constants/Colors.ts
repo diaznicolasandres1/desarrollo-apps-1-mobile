@@ -46,4 +46,16 @@ export const Colors = {
     azul800: "#1565C0",
     azul900: "#0D47A1",
   },
+  red: {
+    red50: "#FFE3E3",
+    red100: "#FFBDBD",
+    red200: "#FF9B9B",
+    red300: "#FF7A7A",
+    red400: "#FF5A5A",
+    red500: "#FF3A3A",
+    red600: "#E01A1A",
+    red700: "#C01414",
+    red800: "#A01010",
+    red900: "#800C0C",
+  },
 };
