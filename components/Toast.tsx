@@ -6,15 +6,18 @@ export const toastConfig: ToastConfig = {
     <BaseToast
       {...props}
       style={{
-        borderLeftColor: "blue",
+        borderLeftColor: Colors.azul.azul600,
         backgroundColor: Colors.azul.azul100,
         borderRadius: 10,
         marginBottom: 20,
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
+        fontSize: 17,
+        fontWeight: "bold",
+      }}
+      text2Style={{
         fontSize: 15,
-        fontWeight: "400",
       }}
     />
   ),
@@ -22,7 +25,8 @@ export const toastConfig: ToastConfig = {
     <ErrorToast
       {...props}
       style={{
-        backgroundColor: "#ffe0e0",
+        borderLeftColor: Colors.red.red600,
+        backgroundColor: Colors.red.red100,
         borderRadius: 10,
         marginBottom: 20,
       }}
