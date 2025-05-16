@@ -15,6 +15,9 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  isGuest: boolean;
+  loginAsGuest: () => void;
+  user: User | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +28,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
   const { setItem, getItem, removeItem } = useStorage();
 
@@ -55,6 +59,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     removeItem("user");
   };
 
+  const loginAsGuest = () => {
+    setIsGuest(true);
+    setIsAuthenticated(true);
+  };
+
   useEffect(() => {
     getItem("user").then((user) => {
       if (user) {
@@ -68,7 +77,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, login: onlogin, logout, isLoading }}
+      value={{
+        isAuthenticated,
+        login: onlogin,
+        logout,
+        isLoading,
+        user,
+        isGuest,
+        loginAsGuest,
+      }}
     >
       {children}
     </AuthContext.Provider>

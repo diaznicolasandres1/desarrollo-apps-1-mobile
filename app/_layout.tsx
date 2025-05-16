@@ -29,7 +29,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <AuthProvider>
         <Routes />
-        <StatusBar style="auto" />
+        <StatusBar style="dark" />
         <Toast config={toastConfig} position="bottom" />
       </AuthProvider>
     </ThemeProvider>

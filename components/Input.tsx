@@ -19,15 +19,11 @@ export const SimpleInput = ({
       <TextInput {...props} style={[styles.input, style]} error={isError} />
 
       {isError && !!errorMessage && (
-        <HelperText type="error" visible={true}>
-          {errorMessage}
-        </HelperText>
+        <HelperText type="error">{errorMessage}</HelperText>
       )}
 
       {!isError && !!helperText && (
-        <HelperText type="info" visible={true}>
-          {helperText}
-        </HelperText>
+        <HelperText type="info">{helperText}</HelperText>
       )}
     </View>
   );

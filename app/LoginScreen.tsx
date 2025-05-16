@@ -8,7 +8,7 @@ import { Image, StyleSheet, View } from "react-native";
 import { TextInput as PaperTextInput } from "react-native-paper";
 
 const LoginScreen: React.FC = () => {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, loginAsGuest } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const { control, handleSubmit, watch } = useForm<{
     email: string;
@@ -86,7 +86,9 @@ const LoginScreen: React.FC = () => {
         >
           Recuperar contraseña
         </PrimaryButton>
-        <SecondaryButton>Ingresar como invitado</SecondaryButton>
+        <SecondaryButton onPress={loginAsGuest}>
+          Ingresar como invitado
+        </SecondaryButton>
       </View>
     </View>
   );
