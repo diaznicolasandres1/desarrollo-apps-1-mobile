@@ -6,11 +6,8 @@ import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
@@ -30,18 +27,36 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Inicio",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="create"
         options={{
-          title: "Explore",
+          title: "Crear",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="paperplane.fill" color={color} />
+            <IconSymbol size={28} name="plus.circle.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="favorites"
+        options={{
+          title: "Favoritos",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="heart.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="my-recipes"
+        options={{
+          title: "Mis recetas",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="square.and.pencil" color={color} />
           ),
         }}
       />
