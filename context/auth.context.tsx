@@ -40,7 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     email: string;
   } | null>(null);
 
-  const { setItem, getItem, removeItem } = useStorage();
+  const { setItem, getItem, removeItem } = useStorage<User>();
 
   const onRecoveryCode = async (email: string) => {
     const response = await recoveryPassword(email);
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const onlogin = async (email: string, password: string) => {
     setIsLoading(true);
     const response = await login(email, password);
-    if (response.success) {
+    if (response.success && response.user) {
       setIsAuthenticated(true);
       Toast.show({
         type: "success",
@@ -145,7 +145,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const onValidateCode = (code: string) => {
-    const isCodeValid = code === recoveryData!.recoveryCode;
+    if (!recoveryData) return false;
+    const isCodeValid = code === recoveryData.recoveryCode;
 
     if (isCodeValid) {
       Toast.show({

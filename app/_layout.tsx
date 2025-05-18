@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { toastConfig } from "@/components/Toast";
-import { AuthProvider, useAuth } from "@/context/auth.context";
+import { AuthProvider } from "@/context/auth.context";
 import Toast from "react-native-toast-message";
 
 export default function RootLayout() {
@@ -30,15 +30,9 @@ export default function RootLayout() {
 }
 
 const Routes = () => {
-  const { isAuthenticated } = useAuth();
-
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      ) : (
-        <Stack.Screen name="(unauth)" options={{ headerShown: false }} />
-      )}
+      <Stack.Screen name="(unauth)" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
