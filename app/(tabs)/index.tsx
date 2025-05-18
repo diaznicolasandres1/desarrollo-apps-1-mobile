@@ -21,10 +21,10 @@ export default function HomeScreen() {
             <Ionicons name="person-circle-outline" size={25} />
           </TouchableOpacity>
           <View style={styles.iconGroup}>
-            <TouchableOpacity onPress={logout}>
+            <TouchableOpacity onPress={() => {}}>
               <Ionicons name="search-outline" size={25} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={logout}>
+            <TouchableOpacity onPress={() => {}}>
               <Ionicons name="settings-outline" size={25} />
             </TouchableOpacity>
           </View>

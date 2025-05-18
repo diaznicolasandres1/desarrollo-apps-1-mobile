@@ -1,8 +1,9 @@
+import SplashScreen from "@/components/SplashScreen";
 import { useStorage } from "@/hooks/useLocalStorage";
 import { login } from "@/resources/login";
 import { changePassword, recoveryPassword } from "@/resources/restore-password";
 import { User } from "@/types/User";
-import { useRouter } from "expo-router";
+import { SplashScreen as ExpoSplashScreen, useRouter } from "expo-router";
 import React, {
   createContext,
   ReactNode,
@@ -11,6 +12,8 @@ import React, {
   useState,
 } from "react";
 import Toast from "react-native-toast-message";
+
+ExpoSplashScreen.hideAsync();
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -30,6 +33,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -88,6 +92,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
     setIsLoading(false);
     setRecoveryData(null);
+
     router.push("/(tabs)");
   };
 
@@ -165,15 +170,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return isCodeValid;
   };
 
+  const prepare = async () => {
+    const user = await getItem("user");
+    if (user) {
+      setIsAuthenticated(true);
+      setUser(user);
+    }
+
+    setTimeout(() => {
+      setIsReady(true);
+    }, 1000);
+  };
+
   useEffect(() => {
-    getItem("user").then((user) => {
-      if (user) {
-        setIsAuthenticated(true);
-        setUser(user);
-      } else {
-        setIsAuthenticated(false);
-      }
-    });
+    prepare();
   }, []);
 
   return (
@@ -191,7 +201,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         onValidateCode,
       }}
     >
-      {children}
+      {isReady ? children : <SplashScreen />}
     </AuthContext.Provider>
   );
 };
