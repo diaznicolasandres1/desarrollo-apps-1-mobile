@@ -53,7 +53,7 @@ const LoginScreen: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/(tabs)");
+      router.push("/(logged)");
     }
   }, [isAuthenticated]);
 

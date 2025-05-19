@@ -1,20 +1,13 @@
-import { Redirect, Tabs } from "expo-router";
+import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
 
 import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/context/auth.context";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return <Redirect href="/(unauth)" />;
-  }
-
   return (
     <Tabs
       screenOptions={{
@@ -27,7 +20,9 @@ export default function TabLayout() {
             // Use a transparent background on iOS to show the blur effect
             position: "absolute",
           },
-          default: {},
+          default: {
+            backgroundColor: Colors.orange.orange50,
+          },
         }),
       }}
     >
@@ -36,7 +31,7 @@ export default function TabLayout() {
         options={{
           title: "Inicio",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <Ionicons name="menu-outline" size={28} color={color} />
           ),
         }}
       />
@@ -45,7 +40,7 @@ export default function TabLayout() {
         options={{
           title: "Crear",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="plus.circle.fill" color={color} />
+            <Ionicons name="add-circle-outline" size={28} color={color} />
           ),
         }}
       />
@@ -54,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: "Favoritos",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="heart.fill" color={color} />
+            <Ionicons name="heart-outline" size={28} color={color} />
           ),
         }}
       />
@@ -63,7 +58,7 @@ export default function TabLayout() {
         options={{
           title: "Mis recetas",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="square.and.pencil" color={color} />
+            <Ionicons name="restaurant-outline" size={28} color={color} />
           ),
         }}
       />
