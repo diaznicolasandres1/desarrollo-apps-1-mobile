@@ -32,7 +32,7 @@ export default function RootLayout() {
 const Routes = () => {
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(logged)" options={{ headerShown: false }} />
+      <Stack.Screen name="logged" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

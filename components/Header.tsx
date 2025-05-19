@@ -1,11 +1,13 @@
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const Header = () => {
   const { logout } = useAuth();
+  const router = useRouter();
 
   return (
     <View style={styles.headerContainer}>
@@ -14,7 +16,7 @@ const Header = () => {
           <Ionicons name="person-circle-outline" size={25} />
         </TouchableOpacity>
         <View style={styles.iconGroup}>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => router.push("/logged/search")}>
             <Ionicons name="search-outline" size={25} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => {}}>
@@ -23,6 +25,30 @@ const Header = () => {
         </View>
       </View>
       <Text style={styles.headerText}>Recetas</Text>
+    </View>
+  );
+};
+
+export const AlternativeHeader = ({
+  title = "Recetas",
+}: {
+  title?: string;
+}) => {
+  const router = useRouter();
+
+  return (
+    <View style={styles.headerContainer}>
+      <View style={styles.headerIcons}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back-outline" size={25} />
+        </TouchableOpacity>
+        <View style={styles.iconGroup}>
+          <TouchableOpacity onPress={() => {}}>
+            <Ionicons name="menu-outline" size={25} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.alternativeHeaderText}>{title}</Text>
     </View>
   );
 };
@@ -44,6 +70,12 @@ const styles = StyleSheet.create({
   },
   headerText: {
     fontSize: 30,
+    fontWeight: "bold",
+    color: Colors.orange.orange900,
+    marginTop: 16,
+  },
+  alternativeHeaderText: {
+    fontSize: 35,
     fontWeight: "bold",
     color: Colors.orange.orange900,
     marginTop: 16,

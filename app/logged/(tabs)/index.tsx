@@ -1,4 +1,4 @@
-import Header from "@/components/Header";
+import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -72,9 +72,7 @@ const recipes = [
 export default function HomeScreen() {
   const router = useRouter();
   return (
-    <View style={styles.container}>
-      <Header />
-
+    <ScreenLayout>
       <ScrollView>
         <View>
           <View style={styles.sectionHeader}>
@@ -141,7 +139,7 @@ export default function HomeScreen() {
                     <View style={styles.recipeInfoRowItem}>
                       <TouchableOpacity
                         onPress={() => {
-                          router.push(`/(logged)/my-recipes`);
+                          router.push(`/logged/receipt/${id}`);
                         }}
                       >
                         <Ionicons
@@ -158,16 +156,11 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.background,
-    flex: 1,
-  },
-
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
