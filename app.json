@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "recetas",
-    "slug": "recetas",
+    "name": "Recetas",
+    "slug": "Recetas",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon_1024.png",
     "scheme": "recetas",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon_1024.png",
         "backgroundColor": "#FFF3E0"
       },
       "edgeToEdgeEnabled": true,
@@ -29,7 +29,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/icon_1024.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#FFF3E0"
