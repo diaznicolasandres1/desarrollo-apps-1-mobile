@@ -6,6 +6,7 @@ import "react-native-reanimated";
 
 import { toastConfig } from "@/components/Toast";
 import { AuthProvider } from "@/context/auth.context";
+import { Provider } from "react-native-paper";
 import Toast from "react-native-toast-message";
 
 export default function RootLayout() {
@@ -20,11 +21,13 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={DefaultTheme}>
-      <AuthProvider>
-        <Routes />
-        <StatusBar style="dark" />
-        <Toast config={toastConfig} position="bottom" />
-      </AuthProvider>
+      <Provider theme={{ mode: "exact" }}>
+        <AuthProvider>
+          <Routes />
+          <StatusBar style="dark" />
+          <Toast config={toastConfig} position="bottom" />
+        </AuthProvider>
+      </Provider>
     </ThemeProvider>
   );
 }

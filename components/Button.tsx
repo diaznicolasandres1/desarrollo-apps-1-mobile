@@ -2,8 +2,10 @@ import { Colors } from "@/constants/Colors";
 import { StyleSheet } from "react-native";
 import { ButtonProps, Button as PaperButton } from "react-native-paper";
 
-export const PrimaryButton = ({ ...props }: ButtonProps) => {
-  return <PaperButton mode="contained" style={styles.primary} {...props} />;
+export const PrimaryButton = ({ style, ...props }: ButtonProps) => {
+  return (
+    <PaperButton mode="contained" style={[styles.primary, style]} {...props} />
+  );
 };
 
 export const SecondaryButton = ({ ...props }: ButtonProps) => {
