@@ -7,7 +7,7 @@ import { Colors } from "@/constants/Colors";
 
 export function useThemeColor(
   props: { color?: string },
-  colorName: keyof typeof Colors
+  colorName: keyof typeof Colors,
 ) {
   const color = Colors[colorName];
   return typeof color === "string" ? color : "#11181C";

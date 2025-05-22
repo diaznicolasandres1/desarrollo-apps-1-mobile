@@ -130,7 +130,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const response = await changePassword(
       recoveryData.email,
       password,
-      recoveryData.recoveryCode
+      recoveryData.recoveryCode,
     );
     if (response.success) {
       Toast.show({

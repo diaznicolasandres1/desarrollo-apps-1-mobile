@@ -32,7 +32,7 @@ export const recoveryPassword = async (email: string) => {
 export const changePassword = async (
   email: string,
   password: string,
-  recoveryCode: string
+  recoveryCode: string,
 ) => {
   try {
     const response = await fetch(`${BASE_URL}/users/change-password`, {

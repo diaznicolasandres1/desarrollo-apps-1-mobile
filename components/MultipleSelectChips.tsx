@@ -39,14 +39,14 @@ const MultiSelectChips = ({
   const [menuVisible, setMenuVisible] = useState(false);
   const [search, setSearch] = useState("");
   const [anchorLayout, setAnchorLayout] = useState<LayoutRectangle | null>(
-    null
+    null,
   );
   const anchorRef = useRef<View>(null);
 
   const filteredOptions = useMemo(
     () =>
       options.filter((opt) => opt.toLowerCase().includes(search.toLowerCase())),
-    [options, search]
+    [options, search],
   );
 
   const isSelected = (item: string) => selected.includes(item);
