@@ -11,18 +11,24 @@ export const login = async (email: string, password: string) => {
       body: JSON.stringify({ email, password }),
     });
 
-    if (!response.ok) {
-      return { success: false, user: null, error: response.statusText };
+    const responseData = await response.json();
+
+    if (response.status === 201) {
+      return { 
+        success: true, 
+        user: responseData.data, 
+        error: null 
+      };
     }
 
-    const data: {
-      statusCode: number;
-      message: string;
-      data: User;
-    } = await response.json();
-    return { success: true, user: data.data, error: null };
+    return { 
+      success: false, 
+      user: null, 
+      error: responseData.message 
+    };
+    
   } catch (error: any) {
     console.error("Login error:", error);
-    return { success: false, user: null, error: error };
+    return { success: false, user: null, error: "Error de conexión" };
   }
 };

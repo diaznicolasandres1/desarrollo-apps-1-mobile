@@ -82,18 +82,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       });
       setItem("user", response.user);
       setUser(response.user);
+      router.push("/(tabs)");
     } else {
       setIsAuthenticated(false);
       Toast.show({
         type: "error",
         text1: "Error al iniciar sesión",
-        text2: response.error?.message,
+        text2: response.error,
       });
     }
     setIsLoading(false);
     setRecoveryData(null);
 
-    router.push("/(tabs)");
   };
 
   const logout = () => {
