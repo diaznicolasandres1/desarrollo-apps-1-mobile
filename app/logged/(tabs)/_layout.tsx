@@ -2,18 +2,38 @@ import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
 
-import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/context/auth.context";
 import { Ionicons } from "@expo/vector-icons";
+import { BottomTabBarButtonProps } from "@react-navigation/bottom-tabs";
+import { PlatformPressable } from "@react-navigation/elements";
+
+// Componente para tab deshabilitado en modo invitado
+function DisabledGuestTabButton(props: BottomTabBarButtonProps) {
+  return (
+    <PlatformPressable
+      {...props}
+      style={[props.style, { opacity: 0.5 }]}
+      onPress={(ev) => {
+        ev.preventDefault();
+      }}
+      onPressIn={(ev) => {
+        ev.preventDefault();
+      }}
+    />
+  );
+}
 
 export default function TabLayout() {
+  const { isGuest } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors.tint,
+        tabBarInactiveTintColor: Colors.olive.olive900,
         headerShown: false,
-        tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
         tabBarStyle: Platform.select({
           ios: {
@@ -42,6 +62,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <Ionicons name="add-circle-outline" size={28} color={color} />
           ),
+          tabBarButton: isGuest ? DisabledGuestTabButton : undefined,
         }}
       />
       <Tabs.Screen
@@ -51,6 +72,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <Ionicons name="heart-outline" size={28} color={color} />
           ),
+          tabBarButton: isGuest ? DisabledGuestTabButton : undefined,
         }}
       />
       <Tabs.Screen
@@ -60,6 +82,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => (
             <Ionicons name="restaurant-outline" size={28} color={color} />
           ),
+          tabBarButton: isGuest ? DisabledGuestTabButton : undefined,
         }}
       />
     </Tabs>
