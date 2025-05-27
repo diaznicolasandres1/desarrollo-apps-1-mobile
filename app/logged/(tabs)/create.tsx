@@ -104,7 +104,7 @@ const IngredientForm = ({
     "Pan rallado", "Perejil", "Orégano", "Laurel", "Limón", "Vinagre"
   ];
 
-  const measureTypes = ["gramos", "cucharadas", "kilogramo", "mililitros", "tazas", "unidad", "pizca"];
+  const measureTypes = ["gr", "cucharadas", "kg", "ml", "tazas", "unidad", "pizca"];
 
   const toggleDropdown = (key: string) => {
     setShowDropdowns(prev => ({
@@ -220,7 +220,11 @@ const IngredientForm = ({
         </View>
       ))}
 
-      <PrimaryButton onPress={addNewIngredient} style={styles.addIngredientButton}>
+      <PrimaryButton 
+        onPress={addNewIngredient} 
+        style={[styles.addIngredientButton, { backgroundColor: Colors.orange.orange300 }]}
+        compact={true}
+      >
         Agregar Ingrediente
       </PrimaryButton>
     </View>
@@ -231,63 +235,127 @@ const IngredientForm = ({
 const StepsForm = ({ 
   onAdd, 
   steps, 
-  onRemove 
+  onRemove, 
+  updateStep
 }: {
   onAdd: (step: Omit<Step, 'id'>) => void;
   steps: Step[];
   onRemove: (index: number) => void;
+  updateStep: (index: number, step: Step) => void;
 }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [stepImage, setStepImage] = useState<string | null>(null);
 
   const handleAdd = () => {
+    console.log("handleAdd called", { title: title.trim(), description: description.trim() });
     if (title.trim() && description.trim()) {
       onAdd({
         title: title.trim(),
         description: description.trim(),
+        ...(stepImage && { mediaResource: stepImage }),
       });
       setTitle("");
       setDescription("");
+      setStepImage(null);
+    } else {
+      console.log("Validation failed - title or description empty");
     }
+  };
+
+  const addStepImage = async () => {
+    // Mock function para agregar imagen
+    const imageUrl = "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop";
+    setStepImage(imageUrl);
   };
 
   return (
     <View style={styles.sectionContainer}>
       <Text style={styles.sectionTitle}>Instrucciones</Text>
       
-      <View style={styles.stepForm}>
-        <TextInput
-          style={styles.textInput}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Título del paso"
-          placeholderTextColor={Colors.text}
-        />
-        <TextInput
-          style={[styles.textInput, styles.textArea]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Descripción del paso"
-          placeholderTextColor={Colors.text}
-          multiline
-          numberOfLines={3}
-        />
-        <PrimaryButton onPress={handleAdd} style={styles.addStepButton}>
-          Agregar paso
-        </PrimaryButton>
-      </View>
-
       {steps.map((step, index) => (
-        <View key={step.id} style={styles.stepItem}>
-          <View style={styles.stepHeader}>
-            <Text style={styles.stepTitle}>Paso {index + 1}: {step.title}</Text>
-            <TouchableOpacity onPress={() => onRemove(index)}>
+        <View key={step.id} style={styles.stepCard}>
+          <View style={styles.stepContent}>
+            <View style={styles.stepImageContainer}>
+              {step.mediaResource ? (
+                <Image source={{ uri: step.mediaResource }} style={styles.stepImage} />
+              ) : (
+                <TouchableOpacity 
+                  style={styles.addStepImageButton}
+                  onPress={() => {
+                    addStepImage();
+                  }}
+                >
+                  <Ionicons name="add" size={32} color={Colors.text} />
+                </TouchableOpacity>
+              )}
+            </View>
+            <View style={styles.stepTextContainer}>
+              <Text style={styles.stepTitleDisplay}>{step.title}</Text>
+              <Text style={styles.stepDescriptionDisplay}>{step.description}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.stepDeleteButton}
+              onPress={() => onRemove(index)}
+            >
               <Ionicons name="trash-outline" size={20} color={Colors.red.red600} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.stepDescription}>{step.description}</Text>
         </View>
       ))}
+
+      <View style={styles.stepForm}>
+        <View style={styles.stepFormContainer}>
+          <TextInput
+            style={styles.textInput}
+            value={title}
+            onChangeText={setTitle}
+            placeholder="Título del paso"
+            placeholderTextColor={Colors.text}
+          />
+          <TextInput
+            style={[styles.textInput, styles.textArea, styles.textInputNoLine]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="Descripción del paso"
+            placeholderTextColor={Colors.text}
+            multiline
+            numberOfLines={3}
+          />
+          
+          {/* Imagen del paso */}
+          <View style={styles.stepImageSection}>
+            <Text style={styles.fieldLabel}>Imagen del paso (opcional)</Text>
+            {stepImage ? (
+              <View style={styles.stepImagePreview}>
+                <Image source={{ uri: stepImage }} style={styles.stepPreviewImage} />
+                <TouchableOpacity 
+                  style={styles.removeStepImageButton}
+                  onPress={() => setStepImage(null)}
+                >
+                  <Ionicons name="close" size={16} color="white" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.addStepImageButtonForm}
+                onPress={addStepImage}
+              >
+                <Ionicons name="add" size={24} color={Colors.orange.orange700} />
+                <Text style={styles.addImageText}>Agregar imagen</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+        
+        <PrimaryButton 
+          onPress={handleAdd} 
+          style={[styles.addStepButton, { backgroundColor: Colors.orange.orange400 }]}
+          compact={true}
+        >
+          Agregar paso
+        </PrimaryButton>
+      </View>
     </View>
   );
 };
@@ -312,6 +380,7 @@ export default function CreateRecipeScreen() {
     submitRecipe,
     isLoading,
     updateIngredient,
+    updateStep,
   } = useCreateRecipeViewModel();
 
   const handleNext = () => {
@@ -341,7 +410,7 @@ export default function CreateRecipeScreen() {
 
   if (currentStep === 1) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
+      <ScreenLayout alternativeHeader={{ title: "Nueva Receta" }}>
         <StepOne
           recipeName={formData.name}
           setRecipeName={(name) => updateFormData("name", name)}
@@ -353,13 +422,20 @@ export default function CreateRecipeScreen() {
   }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: formData.name || "Crear receta" }}>
+    <ScreenLayout alternativeHeader={{ title: "Nueva Receta" }}>
+      {/* Nombre de la receta en recuadro naranja */}
+      {formData.name && (
+        <View style={styles.recipeNameContainer}>
+          <Text style={styles.recipeNameText}>{formData.name}</Text>
+        </View>
+      )}
+      
       <ScrollView style={styles.scrollContainer}>
         {/* Descripción */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Descripción</Text>
           <TextInput
-            style={[styles.textInput, styles.textArea]}
+            style={[styles.textInput, styles.textArea, styles.textInputNoLine]}
             value={formData.description}
             onChangeText={(text) => updateFormData("description", text)}
             placeholder="Describe tu receta..."
@@ -449,13 +525,16 @@ export default function CreateRecipeScreen() {
                   {
                     backgroundColor: formData.difficulty === diff.key 
                       ? Colors.olive.olive600 
-                      : Colors.azul.azul500,
-                    opacity: formData.difficulty === diff.key ? 1 : 0.7,
+                      : Colors.orange.orange200,
+                    opacity: formData.difficulty === diff.key ? 1 : 0.8,
                   }
                 ]}
                 onPress={() => updateFormData("difficulty", diff.key)}
               >
-                <Text style={styles.difficultyText}>{diff.label}</Text>
+                <Text style={[
+                  styles.difficultyText,
+                  { color: formData.difficulty === diff.key ? "white" : Colors.orange.orange700 }
+                ]}>{diff.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -525,21 +604,15 @@ export default function CreateRecipeScreen() {
           onAdd={addStep}
           steps={formData.steps}
           onRemove={removeStep}
+          updateStep={updateStep}
         />
 
         {/* Botones de navegación */}
         <View style={styles.navigationButtons}>
           <PrimaryButton
-            onPress={previousStep}
-            style={[styles.navButton, { backgroundColor: Colors.olive.olive600 }]}
-          >
-            Anterior
-          </PrimaryButton>
-          
-          <PrimaryButton
             onPress={handleSubmit}
             loading={isLoading}
-            style={styles.navButton}
+            style={styles.publishButton}
           >
             Publicar receta
           </PrimaryButton>
@@ -594,7 +667,7 @@ const styles = StyleSheet.create({
   textInput: {
     backgroundColor: "white",
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     fontSize: 16,
     color: Colors.text,
     paddingRight: 45,
@@ -608,6 +681,9 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: "top",
   },
+  textInputNoLine: {
+    borderBottomWidth: 0,
+  },
   clearButton: {
     position: "absolute",
     right: 12,
@@ -618,7 +694,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.text,
     opacity: 0.7,
-    marginBottom: 32,
+    marginBottom: 4,
+    marginTop: 8,
+    marginLeft: 12,
   },
   errorText: {
     fontSize: 12,
@@ -787,6 +865,9 @@ const styles = StyleSheet.create({
   },
   addIngredientButton: {
     marginTop: 16,
+    minHeight: 40,
+    alignSelf: "center",
+    paddingHorizontal: 24,
   },
   trashButton: {
     padding: 8,
@@ -824,43 +905,87 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: 16,
   },
+  stepCard: {
+    backgroundColor: Colors.orange.orange100,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  stepContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  stepImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  stepImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  stepTextContainer: {
+    flex: 1,
+  },
+  stepTitleDisplay: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.orange.orange700,
+  },
+  stepDescriptionDisplay: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  stepDeleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.red.red100,
+  },
   stepForm: {
     gap: 8,
     marginBottom: 16,
   },
   addStepButton: {
     marginTop: 8,
+    minHeight: 40,
+    alignSelf: "center",
+    paddingHorizontal:35,
   },
-  stepItem: {
-    backgroundColor: Colors.orange.orange50,
-    padding: 12,
+  addStepImageButton: {
+    width: "100%",
+    height: 80,
     borderRadius: 8,
-    marginBottom: 8,
-  },
-  stepHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    borderWidth: 2,
+    borderColor: Colors.orange.orange700,
+    borderStyle: "dashed",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 4,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: Colors.orange.orange700,
-    flex: 1,
-  },
-  stepDescription: {
-    fontSize: 14,
-    color: Colors.text,
+    flexDirection: "row",
+    gap: 8,
   },
   navigationButtons: {
     flexDirection: "row",
     gap: 16,
     paddingHorizontal: 16,
     paddingBottom: 32,
+    justifyContent: "center",
   },
-  navButton: {
-    flex: 1,
+  publishButton: {
+    backgroundColor: Colors.orange.orange900,
+    padding: 5,
+    borderRadius: 40,
+    alignSelf: "center",
+    minWidth: 150,
+    paddingHorizontal:35,
+
+  },
+  publishButtonText: {
+    fontSize: 25,
+    fontWeight: "600",
+    color: "white",
+    textAlign: "center",
   },
   categoriesGrid: {
     flexDirection: "row",
@@ -903,5 +1028,57 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.text,
     marginRight: 8,
+  },
+  stepImageSection: {
+    marginBottom: 16,
+  },
+  stepImagePreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  stepPreviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeStepImageButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.red.red100,
+  },
+  addStepImageButtonForm: {
+    width: "100%",
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.orange.orange700,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  addImageText: {
+    color: Colors.orange.orange700,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  recipeNameContainer: {
+    backgroundColor: Colors.orange.orange200,
+    padding: 16,
+    marginBottom: 32,
+  },
+  recipeNameText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.orange.orange900,
+  },
+  stepFormContainer: {
+    backgroundColor: Colors.orange.orange100,
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16,
   },
 });

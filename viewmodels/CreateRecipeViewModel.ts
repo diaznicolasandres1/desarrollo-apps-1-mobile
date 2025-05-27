@@ -50,6 +50,7 @@ export const mockImageUpload = async (): Promise<string> => {
 
 export const useCreateRecipeViewModel = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [stepIdCounter, setStepIdCounter] = useState(1);
   const [formData, setFormData] = useState<RecipeFormData>({
     name: "",
     description: "",
@@ -164,12 +165,13 @@ export const useCreateRecipeViewModel = () => {
   const addStep = (step: Omit<Step, 'id'>) => {
     const newStep: Step = {
       ...step,
-      id: Date.now().toString(),
+      id: stepIdCounter.toString(),
     };
     setFormData((prev) => ({
       ...prev,
       steps: [...prev.steps, newStep],
     }));
+    setStepIdCounter(prev => prev + 1);
   };
 
   const removeStep = (index: number) => {
@@ -261,6 +263,7 @@ export const useCreateRecipeViewModel = () => {
       servings: 0,
     });
     setCurrentStep(1);
+    setStepIdCounter(1);
     setErrors({});
   };
 
