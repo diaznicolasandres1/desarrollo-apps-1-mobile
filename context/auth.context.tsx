@@ -76,13 +76,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const response = await login(email, password);
     if (response.success && response.user) {
       setIsAuthenticated(true);
+      setIsGuest(false);
       Toast.show({
         type: "success",
         text1: "Bienvenido 👋",
       });
       setItem("user", response.user);
       setUser(response.user);
-      router.push("/(tabs)");
+      router.push("/logged");
     } else {
       setIsAuthenticated(false);
       Toast.show({
@@ -98,6 +99,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const logout = () => {
     setIsAuthenticated(false);
+    setIsGuest(false);
     setUser(null);
     removeItem("user");
     setRecoveryData(null);
@@ -113,7 +115,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       text1: "Bienvenido 👋",
       text2: "Estás ingresando como invitado",
     });
-    router.push("/(tabs)");
+    router.push("/logged");
   };
 
   const onNewPassword = async (password: string): Promise<boolean> => {
