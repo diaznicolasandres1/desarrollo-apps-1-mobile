@@ -1,0 +1,499 @@
+import { StyleSheet } from 'react-native';
+import { Colors } from '@/constants/Colors';
+
+export const stepOneStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingTop: 20,
+  },
+  instructionContainer: {
+    backgroundColor: Colors.orange.orange200,
+    padding: 16,
+    marginBottom: 32,
+  },
+  instructionText: {
+    fontSize: 16,
+    color: Colors.orange.orange900,
+    lineHeight: 22,
+  },
+  formContainer: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  fieldLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  inputContainer: {
+    position: "relative",
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: Colors.text,
+    paddingRight: 45,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text,
+  },
+  textInputError: {
+    borderBottomColor: Colors.red.red500,
+  },
+  clearButton: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    transform: [{ translateY: -10 }],
+  },
+  characterCount: {
+    fontSize: 12,
+    color: Colors.text,
+    opacity: 0.7,
+    marginBottom: 32,
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.red.red600,
+    marginBottom: 32,
+  },
+  nextButton: {
+    marginHorizontal: 20,
+  },
+  nextButtonDisabled: {
+    opacity: 0.6,
+  },
+});
+
+export const ingredientFormStyles = StyleSheet.create({
+  sectionContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  ingredientRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "flex-end",
+    marginBottom: 12,
+  },
+  ingredientDropdown: {
+    backgroundColor: Colors.orange.orange100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    position: "relative",
+    zIndex: 1,
+    flex: 3,
+    height: 40,
+    justifyContent: "center",
+  },
+  quantityContainer: {
+    backgroundColor: Colors.orange.orange100,
+    paddingHorizontal: 4,
+    paddingVertical: 0,
+    borderRadius: 8,
+    width: 60,
+    height: 40,
+    justifyContent: "center",
+  },
+  unitDropdown: {
+    backgroundColor: Colors.orange.orange100,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flex: 2,
+    height: 40,
+    justifyContent: "center",
+  },
+  dropdown: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  dropdownText: {
+    color: Colors.text,
+    fontSize: 14,
+  },
+  quantityInput: {
+    color: Colors.text,
+    fontSize: 14,
+    textAlign: "center",
+    textAlignVertical: "center",
+    height: "100%",
+    padding: 0,
+  },
+  trashButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.red.red100,
+  },
+  addIngredientButton: {
+    marginTop: 16,
+    minHeight: 40,
+    alignSelf: "center",
+    paddingHorizontal: 35,
+  },
+  dropdownList: {
+    position: "absolute",
+    top: "100%",
+    left: 0,
+    right: 0,
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 4,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 9999,
+  },
+  dropdownScroll: {
+    maxHeight: 200,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.orange.orange100,
+  },
+  dropdownItemText: {
+    color: Colors.text,
+    fontSize: 16,
+  },
+});
+
+export const stepsFormStyles = StyleSheet.create({
+  sectionContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  stepCard: {
+    backgroundColor: Colors.orange.orange100,
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  stepContent: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  stepImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  stepImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 8,
+  },
+  stepTextContainer: {
+    flex: 1,
+  },
+  stepTitleDisplay: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.orange.orange700,
+  },
+  stepDescriptionDisplay: {
+    fontSize: 14,
+    color: Colors.text,
+  },
+  stepDeleteButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.red.red100,
+  },
+  stepForm: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  stepFormContainer: {
+    backgroundColor: Colors.orange.orange100,
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+    marginBottom: 16,
+  },
+  addStepButton: {
+    marginTop: 8,
+    minHeight: 40,
+    alignSelf: "center",
+    paddingHorizontal: 35,
+  },
+  addStepImageButton: {
+    width: "100%",
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.orange.orange700,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  textInput: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: Colors.text,
+    paddingRight: 45,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  textInputNoLine: {
+    borderBottomWidth: 0,
+  },
+  fieldLabel: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 16,
+  },
+  stepImageSection: {
+    marginBottom: 16,
+  },
+  stepImagePreview: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  stepPreviewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeStepImageButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: Colors.red.red100,
+  },
+  addStepImageButtonForm: {
+    width: "100%",
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.orange.orange700,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  addImageText: {
+    color: Colors.orange.orange700,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+});
+
+export const recipeFormStyles = StyleSheet.create({
+  scrollContainer: {
+    flex: 1,
+  },
+  recipeNameContainer: {
+    backgroundColor: Colors.orange.orange200,
+    padding: 16,
+    marginBottom: 32,
+  },
+  recipeNameText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.orange.orange900,
+  },
+  sectionContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 12,
+  },
+  textInput: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: Colors.text,
+    paddingRight: 45,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.text,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: "top",
+  },
+  textInputNoLine: {
+    borderBottomWidth: 0,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: Colors.text,
+    opacity: 0.7,
+    marginBottom: 4,
+    marginTop: 8,
+    marginLeft: 12,
+  },
+  helperText: {
+    fontSize: 12,
+    color: Colors.text,
+    opacity: 0.7,
+    marginTop: 4,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  imagesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  imageItem: {
+    position: "relative",
+  },
+  recipeImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: Colors.red.red500,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  addImageButton: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: Colors.orange.orange700,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  difficultyContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+  },
+  difficultyButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
+  },
+  difficultyText: {
+    fontWeight: "600",
+  },
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryOption: {
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: Colors.orange.orange100,
+  },
+  categoryOptionSelected: {
+    backgroundColor: Colors.orange.orange200,
+  },
+  categoryOptionText: {
+    color: Colors.text,
+  },
+  categoryOptionTextSelected: {
+    fontWeight: "600",
+  },
+  selectedCategoriesContainer: {
+    marginTop: 16,
+  },
+  selectedCategoriesLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  categoriesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  categoryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.orange.orange100,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  categoryText: {
+    color: Colors.orange.orange700,
+    fontSize: 14,
+  },
+  navigationButtons: {
+    flexDirection: "row",
+    gap: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    justifyContent: "center",
+  },
+  publishButton: {
+    backgroundColor: Colors.orange.orange900,
+    padding: 5,
+    borderRadius: 40,
+    alignSelf: "center",
+    minWidth: 150,
+    paddingHorizontal: 35,
+  },
+  errorContainer: {
+    backgroundColor: Colors.red.red100,
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: Colors.red.red600,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+}); 
