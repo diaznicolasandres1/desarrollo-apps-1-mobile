@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { recipeService, CreateRecipeRequest } from "@/services/RecipeService";
+import { useAuth } from "@/context/auth.context";
 
 export interface Ingredient {
   name: string;
@@ -48,16 +50,26 @@ export const mockImageUpload = async (): Promise<string> => {
   return mockImages[Math.floor(Math.random() * mockImages.length)];
 };
 
-export const useCreateRecipeViewModel = () => {
+export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
+  const { user, isGuest } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
+  
+  // Obtener el username del usuario autenticado o usar un valor por defecto para invitados
+  const getUserName = () => {
+    if (isGuest) {
+      return "invitado";
+    }
+    return user?.username || "usuario_anonimo";
+  };
+
   const [formData, setFormData] = useState<RecipeFormData>({
     name: "",
     description: "",
     ingredients: [],
     steps: [],
     principalPictures: [],
-    userName: "usuario123", // Mock user
+    userName: getUserName(),
     category: [],
     duration: 0,
     difficulty: "",
@@ -202,6 +214,10 @@ export const useCreateRecipeViewModel = () => {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
+      setErrors(prev => ({
+        ...prev,
+        image: "Error al subir la imagen"
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -231,19 +247,68 @@ export const useCreateRecipeViewModel = () => {
     }));
   };
 
-  const submitRecipe = async (): Promise<boolean> => {
+  const submitRecipe = async (): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
+    setErrors({});
+
     try {
-      // Aquí se implementará la llamada al backend
-      console.log("Enviando receta:", JSON.stringify(formData, null, 2));
-      
-      // Simular llamada al API
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      
-      return true;
+      // Validar datos antes de enviar
+      if (!validateStep(2)) {
+        return { success: false, message: "Por favor completa todos los campos obligatorios" };
+      }
+
+      // Preparar datos para el backend
+      const recipeData: CreateRecipeRequest = {
+        name: formData.name,
+        description: formData.description,
+        ingredients: formData.ingredients,
+        steps: formData.steps,
+        principalPictures: formData.principalPictures,
+        userName: formData.userName,
+        category: formData.category,
+        duration: formData.duration,
+        difficulty: formData.difficulty as "facil" | "media" | "dificil",
+        servings: formData.servings,
+      };
+
+      console.log("Enviando receta al backend...");
+      const response = await recipeService.createRecipe(recipeData);
+
+      if (response.success) {
+        console.log("Receta creada exitosamente:", response);
+        // Resetear formulario después del éxito
+        resetForm();
+        
+        // Ejecutar callback de navegación si se proporciona
+        if (onRecipeCreated) {
+          onRecipeCreated();
+        }
+        
+        return { success: true, message: response.message };
+      } else {
+        return { success: false, message: response.message || "Error al crear la receta" };
+      }
+
     } catch (error) {
       console.error("Error al crear receta:", error);
-      return false;
+      
+      let errorMessage = "Error al crear la receta";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('HTTP 400')) {
+          errorMessage = "Datos inválidos. Por favor revisa la información ingresada.";
+        } else if (error.message.includes('HTTP 401')) {
+          errorMessage = "No autorizado. Por favor inicia sesión nuevamente.";
+        } else if (error.message.includes('HTTP 500')) {
+          errorMessage = "Error del servidor. Por favor intenta más tarde.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      setErrors({ submit: errorMessage });
+      return { success: false, message: errorMessage };
+
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +321,7 @@ export const useCreateRecipeViewModel = () => {
       ingredients: [],
       steps: [],
       principalPictures: [],
-      userName: "usuario123",
+      userName: getUserName(),
       category: [],
       duration: 0,
       difficulty: "",
