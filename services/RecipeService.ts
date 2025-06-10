@@ -9,7 +9,7 @@ export interface CreateRecipeRequest {
   userName: string;
   category: string[];
   duration: number;
-  difficulty: "facil" | "media" | "dificil";
+  difficulty: "Fácil" | "Medio" | "Difícil";
   servings: number;
 }
 
@@ -118,6 +118,37 @@ class RecipeService {
       }
     } catch (error) {
       console.error("Error obteniendo listado de recetas:", error);
+      throw error;
+    }
+  }
+  async getRecipeById(recipeId: string): Promise<RecipeDetail> {
+    try {
+      console.log('=== OBTENIENDO RECETA POR ID ===');
+      console.log('URL:', `${this.baseUrl}/recipes/${recipeId}`);
+      console.log('Método:', 'GET');
+      console.log('===============================');
+
+      const response = await fetch(`${this.baseUrl}/recipes/${recipeId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (response.ok) {
+        const result: RecipeDetail = await response.json();
+        console.log('Response exitosa (detalle):', result);
+        return result;
+      } else {
+        const errorText = await response.text();
+        console.error('Error response (detalle):', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error al obtener receta por ID:', error);
       throw error;
     }
   }
