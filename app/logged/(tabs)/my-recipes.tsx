@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { recipeService, RecipeDetail } from "../../../services/RecipeService";
+import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
 import { Chip } from "react-native-paper";
 
 export default function MyRecipes() {

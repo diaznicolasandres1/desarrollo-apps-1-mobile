@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { recipeService, RecipeDetail } from "../../../services/RecipeService";
+import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
 export interface User {
   favedRecipesIds: string[];
   _id: string;
