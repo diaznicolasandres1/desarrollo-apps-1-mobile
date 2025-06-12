@@ -121,6 +121,7 @@ class RecipeService {
       throw error;
     }
   }
+
   async getRecipeById(recipeId: string): Promise<RecipeDetail> {
     try {
       console.log('=== OBTENIENDO RECETA POR ID ===');
