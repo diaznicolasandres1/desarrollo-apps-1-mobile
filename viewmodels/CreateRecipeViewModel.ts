@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { recipeService, CreateRecipeRequest } from "@/services/RecipeService";
+import { recipeService, CreateRecipeRequest } from "@/resources/RecipeService";
 import { useAuth } from "@/context/auth.context";
 
 export interface Ingredient {

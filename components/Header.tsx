@@ -43,8 +43,8 @@ export const AlternativeHeader = ({
           <Ionicons name="arrow-back-outline" size={25} />
         </TouchableOpacity>
         <View style={styles.iconGroup}>
-          <TouchableOpacity onPress={() => {}}>
-            <Ionicons name="menu-outline" size={25} />
+          <TouchableOpacity onPress={() => router.push("/logged/create")}>
+            <Ionicons name="add-circle-outline" size={25} />
           </TouchableOpacity>
         </View>
       </View>
