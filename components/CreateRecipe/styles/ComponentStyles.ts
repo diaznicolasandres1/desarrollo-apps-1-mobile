@@ -144,7 +144,6 @@ export const ingredientFormStyles = StyleSheet.create({
   trashButton: {
     padding: 8,
     borderRadius: 8,
-    backgroundColor: Colors.red.red100,
   },
   addIngredientButton: {
     marginTop: 16,
@@ -368,6 +367,8 @@ export const recipeFormStyles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     textAlignVertical: "top",
+    borderWidth: 1,
+    borderColor: Colors.gray.gray300,
   },
   textInputNoLine: {
     borderBottomWidth: 0,
@@ -497,7 +498,7 @@ export const recipeFormStyles = StyleSheet.create({
     marginTop: 16,
   },
   selectedCategoriesLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.text,
     marginBottom: 8,

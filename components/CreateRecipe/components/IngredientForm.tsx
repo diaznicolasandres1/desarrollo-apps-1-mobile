@@ -156,7 +156,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
               style={ingredientFormStyles.trashButton}
               onPress={() => onRemove(index)}
             >
-              <Ionicons name="trash-outline" size={20} color={Colors.red.red600} />
+              <Ionicons name="trash-outline" size={20} color="black" />
             </TouchableOpacity>
           )}
         </View>
