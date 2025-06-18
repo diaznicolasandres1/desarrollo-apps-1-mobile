@@ -124,7 +124,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         {/* Dificultad */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Dificultad</Text>
-          <Text style={recipeFormStyles.helperText}>Selecciona el nivel de dificultad de tu receta</Text>
           <View style={recipeFormStyles.difficultyContainer}>
             {difficulties.map((diff) => (
               <TouchableOpacity
@@ -133,16 +132,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                   recipeFormStyles.difficultyButton,
                   {
                     backgroundColor: formData.difficulty === diff.key 
-                      ? Colors.olive.olive600 
-                      : Colors.orange.orange200,
-                    opacity: formData.difficulty === diff.key ? 1 : 0.8,
+                      ? Colors.olive.olive200 
+                      : Colors.azul.azul50,
                   }
                 ]}
                 onPress={() => updateFormData("difficulty", diff.key)}
               >
                 <Text style={[
                   recipeFormStyles.difficultyText,
-                  { color: formData.difficulty === diff.key ? "white" : Colors.orange.orange700 }
+                  { color: formData.difficulty === diff.key ? Colors.olive.olive700 : Colors.azul.azul300 }
                 ]}>{diff.label}</Text>
               </TouchableOpacity>
             ))}

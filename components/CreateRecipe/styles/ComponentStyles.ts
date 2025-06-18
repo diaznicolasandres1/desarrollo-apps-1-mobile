@@ -454,17 +454,17 @@ export const recipeFormStyles = StyleSheet.create({
   },
   difficultyContainer: {
     flexDirection: "row",
-    gap: 8,
-    marginTop: 16,
+    gap: 10,
+    marginTop: -1,
+    justifyContent: "center",
   },
   difficultyButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 30,
+    paddingVertical: 2,
     borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
   },
   difficultyText: {
     fontWeight: "600",
