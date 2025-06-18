@@ -388,6 +388,28 @@ export const recipeFormStyles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 12,
   },
+  numericRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  numericInput: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    fontSize: 12,
+    color: Colors.text,
+    width: 80,
+    textAlign: "left",
+    borderWidth: 1,
+    borderColor: Colors.gray.gray300,
+  },
+  numericLabel: {
+    fontSize: 12,
+    color: Colors.text,
+    marginLeft: 8,
+  },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",

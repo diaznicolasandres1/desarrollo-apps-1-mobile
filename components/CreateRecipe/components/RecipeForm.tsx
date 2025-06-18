@@ -84,33 +84,39 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         <View style={recipeFormStyles.row}>
           <View style={[recipeFormStyles.sectionContainer, { flex: 1 }]}>
             <Text style={recipeFormStyles.sectionTitle}>Tiempo</Text>
-            <TextInput
-              style={recipeFormStyles.textInput}
-              value={formData.duration === 0 ? "" : formData.duration.toString()}
-              onChangeText={(text) => {
-                const num = text === "" ? 0 : Number(text);
-                updateFormData("duration", isNaN(num) ? 0 : num);
-              }}
-              placeholder=""
-              placeholderTextColor={Colors.text}
-              keyboardType="numeric"
-            />
+            <View style={recipeFormStyles.numericRow}>
+              <TextInput
+                style={recipeFormStyles.numericInput}
+                value={formData.duration === 0 ? "" : formData.duration.toString()}
+                onChangeText={(text) => {
+                  const num = text === "" ? 0 : Number(text);
+                  updateFormData("duration", isNaN(num) ? 0 : num);
+                }}
+                placeholder=""
+                placeholderTextColor={Colors.text}
+                keyboardType="numeric"
+              />
+              <Text style={recipeFormStyles.numericLabel}>Minutos</Text>
+            </View>
             <Text style={recipeFormStyles.helperText}>Tiempo en minutos</Text>
           </View>
           
           <View style={[recipeFormStyles.sectionContainer, { flex: 1, marginLeft: 16 }]}>
             <Text style={recipeFormStyles.sectionTitle}>Porciones</Text>
-            <TextInput
-              style={recipeFormStyles.textInput}
-              value={formData.servings === 0 ? "" : formData.servings.toString()}
-              onChangeText={(text) => {
-                const num = text === "" ? 0 : Number(text);
-                updateFormData("servings", isNaN(num) ? 0 : num);
-              }}
-              placeholder=""
-              placeholderTextColor={Colors.text}
-              keyboardType="numeric"
-            />
+            <View style={recipeFormStyles.numericRow}>
+              <TextInput
+                style={recipeFormStyles.numericInput}
+                value={formData.servings === 0 ? "" : formData.servings.toString()}
+                onChangeText={(text) => {
+                  const num = text === "" ? 0 : Number(text);
+                  updateFormData("servings", isNaN(num) ? 0 : num);
+                }}
+                placeholder=""
+                placeholderTextColor={Colors.text}
+                keyboardType="numeric"
+              />
+              <Text style={recipeFormStyles.numericLabel}>porciones</Text>
+            </View>
             <Text style={recipeFormStyles.helperText}>Porciones que rinde la receta</Text>
           </View>
         </View>
