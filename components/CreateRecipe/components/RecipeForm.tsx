@@ -55,7 +55,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         {/* Imágenes principales */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Imágenes</Text>
-          <View style={recipeFormStyles.imagesContainer}>
+          <View style={recipeFormStyles.imagesSectionContainer}>
             {formData.principalPictures.map((picture, index) => (
               <View key={index} style={recipeFormStyles.imageItem}>
                 <Image source={{ uri: picture.url }} style={recipeFormStyles.recipeImage} />
@@ -68,14 +68,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
               </View>
             ))}
             <TouchableOpacity 
-              style={recipeFormStyles.addImageButton}
+              style={recipeFormStyles.addImageButtonContainer}
               onPress={() => addPrincipalPicture()}
               disabled={isLoading}
             >
-              <Ionicons name="add" size={24} color={Colors.orange.orange700} />
+              <Ionicons name="add-circle-outline" size={24} color={Colors.olive.olive700} />
             </TouchableOpacity>
           </View>
-          <Text style={recipeFormStyles.helperText}>
+          <Text style={recipeFormStyles.helperTextImages}>
             La primera imagen será la principal
           </Text>
         </View>
