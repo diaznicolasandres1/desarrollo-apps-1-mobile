@@ -9,19 +9,21 @@ export const stepOneStyles = StyleSheet.create({
   instructionContainer: {
     backgroundColor: Colors.orange.orange200,
     padding: 16,
+    marginTop: 24,
     marginBottom: 32,
   },
   instructionText: {
-    fontSize: 16,
-    color: Colors.orange.orange900,
-    lineHeight: 22,
+    fontSize: 20.5,
+    fontWeight: "800",
+    color: Colors.orange.orange800,
+    lineHeight: 25,
   },
   formContainer: {
     flex: 1,
     paddingHorizontal: 16,
   },
   fieldLabel: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: Colors.text,
     marginBottom: 16,
@@ -31,7 +33,7 @@ export const stepOneStyles = StyleSheet.create({
     marginBottom: 8,
   },
   textInput: {
-    backgroundColor: "white",
+    backgroundColor: Colors.olive.olive50,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -54,6 +56,7 @@ export const stepOneStyles = StyleSheet.create({
     color: Colors.text,
     opacity: 0.7,
     marginBottom: 32,
+    marginLeft: 18,
   },
   errorText: {
     fontSize: 12,
@@ -61,7 +64,8 @@ export const stepOneStyles = StyleSheet.create({
     marginBottom: 32,
   },
   nextButton: {
-    marginHorizontal: 20,
+    marginHorizontal: 90,
+    marginTop: 24,
   },
   nextButtonDisabled: {
     opacity: 0.6,

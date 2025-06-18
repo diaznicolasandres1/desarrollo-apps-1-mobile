@@ -49,7 +49,7 @@ export default function CreateRecipeScreen() {
 
   if (viewModel.currentStep === 1) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Nueva Receta" }}>
+      <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
         <StepOne
           recipeName={viewModel.formData.name}
           setRecipeName={(name) => viewModel.updateFormData("name", name)}
@@ -61,7 +61,7 @@ export default function CreateRecipeScreen() {
   }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: "Nueva Receta" }}>
+    <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
       <RecipeForm 
         viewModel={viewModel}
         onSubmit={handleSubmit}
