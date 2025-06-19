@@ -1,3 +1,4 @@
+import { BASE_URL } from "@/constants/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export interface CreateRecipeRequest {
@@ -54,7 +55,7 @@ export interface RecipeDetail {
 }
 export type RecipeListResponse = RecipeDetail[];
 class RecipeService {
-  private baseUrl = "https://desarrollo-apps-1-back-end.vercel.app";
+  private baseUrl = BASE_URL;
 
   async createRecipe(
     recipeData: CreateRecipeRequest
@@ -150,6 +151,27 @@ class RecipeService {
       }
     } catch (error) {
       console.error('Error al obtener receta por ID:', error);
+      throw error;
+    }
+  }
+
+  async getUserRecipes(userId: string): Promise<RecipeDetail[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/recipes/user/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const result: RecipeDetail[] = await response.json();
+        return result;
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching user recipes:', error);
       throw error;
     }
   }
