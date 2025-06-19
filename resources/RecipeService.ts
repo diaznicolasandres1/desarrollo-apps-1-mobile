@@ -3,10 +3,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export interface CreateRecipeRequest {
   name: string;
   description: string;
-  ingredients: Ingredient;
-  steps: Step;
-  principalPictures: PrincipalPicture;
-  userName: string;
+  ingredients: Ingredient[];
+  steps: Step[];
+  principalPictures: PrincipalPicture[];
+  userId: string;
   category: string[];
   duration: number;
   difficulty: "Fácil" | "Medio" | "Difícil";
@@ -42,7 +42,7 @@ export interface RecipeDetail {
   description: string;
   steps: Step[];
   principalPictures: PrincipalPicture[];
-  userName: string;
+  userId: string;
   category: string[];
   duration: number;
   difficulty: string;
@@ -67,7 +67,7 @@ class RecipeService {
         "Content-Type": "application/json",
       });
       console.log("Request Body:", JSON.stringify(recipeData, null, 2));
-      console.log("Username enviado:", recipeData.userName);
+      console.log("User ID enviado:", recipeData.userId);
       console.log("=====================");
       const response = await fetch(`${this.baseUrl}/recipes`, {
         method: "POST",
