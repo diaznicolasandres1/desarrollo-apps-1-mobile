@@ -55,7 +55,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         {/* Imágenes principales */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Imágenes</Text>
-          <View style={recipeFormStyles.imagesContainer}>
+          <View style={recipeFormStyles.imagesSectionContainer}>
             {formData.principalPictures.map((picture, index) => (
               <View key={index} style={recipeFormStyles.imageItem}>
                 <Image source={{ uri: picture.url }} style={recipeFormStyles.recipeImage} />
@@ -68,14 +68,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
               </View>
             ))}
             <TouchableOpacity 
-              style={recipeFormStyles.addImageButton}
+              style={recipeFormStyles.addImageButtonContainer}
               onPress={() => addPrincipalPicture()}
               disabled={isLoading}
             >
-              <Ionicons name="add" size={24} color={Colors.orange.orange700} />
+              <Ionicons name="add-circle-outline" size={24} color={Colors.olive.olive700} />
             </TouchableOpacity>
           </View>
-          <Text style={recipeFormStyles.helperText}>
+          <Text style={recipeFormStyles.helperTextImages}>
             La primera imagen será la principal
           </Text>
         </View>
@@ -84,33 +84,39 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         <View style={recipeFormStyles.row}>
           <View style={[recipeFormStyles.sectionContainer, { flex: 1 }]}>
             <Text style={recipeFormStyles.sectionTitle}>Tiempo</Text>
-            <TextInput
-              style={recipeFormStyles.textInput}
-              value={formData.duration === 0 ? "" : formData.duration.toString()}
-              onChangeText={(text) => {
-                const num = text === "" ? 0 : Number(text);
-                updateFormData("duration", isNaN(num) ? 0 : num);
-              }}
-              placeholder=""
-              placeholderTextColor={Colors.text}
-              keyboardType="numeric"
-            />
+            <View style={recipeFormStyles.numericRow}>
+              <TextInput
+                style={recipeFormStyles.numericInput}
+                value={formData.duration === 0 ? "" : formData.duration.toString()}
+                onChangeText={(text) => {
+                  const num = text === "" ? 0 : Number(text);
+                  updateFormData("duration", isNaN(num) ? 0 : num);
+                }}
+                placeholder=""
+                placeholderTextColor={Colors.text}
+                keyboardType="numeric"
+              />
+              <Text style={recipeFormStyles.numericLabel}>Minutos</Text>
+            </View>
             <Text style={recipeFormStyles.helperText}>Tiempo en minutos</Text>
           </View>
           
           <View style={[recipeFormStyles.sectionContainer, { flex: 1, marginLeft: 16 }]}>
             <Text style={recipeFormStyles.sectionTitle}>Porciones</Text>
-            <TextInput
-              style={recipeFormStyles.textInput}
-              value={formData.servings === 0 ? "" : formData.servings.toString()}
-              onChangeText={(text) => {
-                const num = text === "" ? 0 : Number(text);
-                updateFormData("servings", isNaN(num) ? 0 : num);
-              }}
-              placeholder=""
-              placeholderTextColor={Colors.text}
-              keyboardType="numeric"
-            />
+            <View style={recipeFormStyles.numericRow}>
+              <TextInput
+                style={recipeFormStyles.numericInput}
+                value={formData.servings === 0 ? "" : formData.servings.toString()}
+                onChangeText={(text) => {
+                  const num = text === "" ? 0 : Number(text);
+                  updateFormData("servings", isNaN(num) ? 0 : num);
+                }}
+                placeholder=""
+                placeholderTextColor={Colors.text}
+                keyboardType="numeric"
+              />
+              <Text style={recipeFormStyles.numericLabel}>porciones</Text>
+            </View>
             <Text style={recipeFormStyles.helperText}>Porciones que rinde la receta</Text>
           </View>
         </View>
@@ -118,7 +124,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         {/* Dificultad */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Dificultad</Text>
-          <Text style={recipeFormStyles.helperText}>Selecciona el nivel de dificultad de tu receta</Text>
           <View style={recipeFormStyles.difficultyContainer}>
             {difficulties.map((diff) => (
               <TouchableOpacity
@@ -127,16 +132,15 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                   recipeFormStyles.difficultyButton,
                   {
                     backgroundColor: formData.difficulty === diff.key 
-                      ? Colors.olive.olive600 
-                      : Colors.orange.orange200,
-                    opacity: formData.difficulty === diff.key ? 1 : 0.8,
+                      ? Colors.olive.olive200 
+                      : Colors.azul.azul50,
                   }
                 ]}
                 onPress={() => updateFormData("difficulty", diff.key)}
               >
                 <Text style={[
                   recipeFormStyles.difficultyText,
-                  { color: formData.difficulty === diff.key ? "white" : Colors.orange.orange700 }
+                  { color: formData.difficulty === diff.key ? Colors.olive.olive700 : Colors.azul.azul300 }
                 ]}>{diff.label}</Text>
               </TouchableOpacity>
             ))}

@@ -44,16 +44,29 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     }));
 
     if (index !== undefined && field) {
-      const updatedIngredient = { ...ingredients[index] };
-      updatedIngredient[field] = value;
-      onUpdate(index, updatedIngredient);
+      // Si no hay ingredientes reales y estamos editando el primero, agregarlo
+      if (ingredients.length === 0 && index === 0) {
+        const newIngredient = { name: "Ingrediente", quantity: 1, measureType: "unidad" };
+        newIngredient[field] = value;
+        onAdd(newIngredient);
+      } else {
+        const updatedIngredient = { ...ingredients[index] };
+        updatedIngredient[field] = value;
+        onUpdate(index, updatedIngredient);
+      }
     }
   };
 
   const updateQuantity = (index: number, quantity: string) => {
-    const updatedIngredient = { ...ingredients[index] };
-    updatedIngredient.quantity = Number(quantity) || 0;
-    onUpdate(index, updatedIngredient);
+    // Si no hay ingredientes reales y estamos editando el primero, agregarlo
+    if (ingredients.length === 0 && index === 0) {
+      const newIngredient = { name: "Ingrediente", quantity: Number(quantity) || 0, measureType: "unidad" };
+      onAdd(newIngredient);
+    } else {
+      const updatedIngredient = { ...ingredients[index] };
+      updatedIngredient.quantity = Number(quantity) || 0;
+      onUpdate(index, updatedIngredient);
+    }
   };
 
   const addNewIngredient = () => {
@@ -64,11 +77,14 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     });
   };
 
+  // Asegurar que siempre haya al menos un ingrediente para mostrar
+  const displayIngredients = ingredients.length === 0 ? [{ name: "Ingrediente", quantity: 1, measureType: "unidad" }] : ingredients;
+
   return (
     <View style={ingredientFormStyles.sectionContainer}>
       <Text style={ingredientFormStyles.sectionTitle}>Ingredientes</Text>
       
-      {ingredients.map((ingredient, index) => (
+      {displayIngredients.map((ingredient, index) => (
         <View key={index} style={ingredientFormStyles.ingredientRow}>
           <View style={ingredientFormStyles.ingredientDropdown}>
             <TouchableOpacity 
@@ -135,18 +151,20 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
             )}
           </View>
           
-          <TouchableOpacity 
-            style={ingredientFormStyles.trashButton}
-            onPress={() => onRemove(index)}
-          >
-            <Ionicons name="trash-outline" size={20} color={Colors.red.red600} />
-          </TouchableOpacity>
+          {(ingredients.length > 0 || index > 0) && (
+            <TouchableOpacity 
+              style={ingredientFormStyles.trashButton}
+              onPress={() => onRemove(index)}
+            >
+              <Ionicons name="trash-outline" size={20} color="black" />
+            </TouchableOpacity>
+          )}
         </View>
       ))}
 
       <PrimaryButton 
         onPress={addNewIngredient} 
-        style={[ingredientFormStyles.addIngredientButton, { backgroundColor: Colors.orange.orange300 }]}
+        style={[ingredientFormStyles.addIngredientButton, { backgroundColor: Colors.orange.orange700 }]}
         compact={true}
       >
         Agregar Ingrediente
