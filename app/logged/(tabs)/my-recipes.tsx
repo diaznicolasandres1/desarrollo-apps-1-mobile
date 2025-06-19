@@ -14,18 +14,25 @@ import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
 import { Chip } from "react-native-paper";
+import { useAuth } from "@/context/auth.context";
 
 export default function MyRecipes() {
   const router = useRouter();
+  const {  user } = useAuth();
 
   const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchAllRecipes = async () => {
+    const fetchUserRecipes = async () => {
       try {
-        const list = await recipeService.getAllRecipes();
+        if (!user?._id) {
+          setError("No hay usuario autenticado");
+          setLoading(false);
+          return;
+        }
+        const list = await recipeService.getUserRecipes(user._id);
         setRecipes(list);
       } catch (err) {
         console.error(err);
@@ -34,8 +41,8 @@ export default function MyRecipes() {
         setLoading(false);
       }
     };
-    fetchAllRecipes();
-  }, []);
+    fetchUserRecipes();
+  }, [user?._id]);
 
   if (loading) {
     return (
