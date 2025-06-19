@@ -26,7 +26,7 @@ export interface RecipeFormData {
   ingredients: Ingredient[];
   steps: Step[];
   principalPictures: PrincipalPicture[];
-  userName: string;
+  userId: string;
   category: string[];
   duration: number;
   difficulty: "facil" | "media" | "dificil" | "";
@@ -55,12 +55,12 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
   
-  // Obtener el username del usuario autenticado o usar un valor por defecto para invitados
-  const getUserName = () => {
+  // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
+  const getUserId = () => {
     if (isGuest) {
-      return "invitado";
+      return "guest_user";
     }
-    return user?.username || "usuario_anonimo";
+    return user?._id || "anonymous_user";
   };
 
   const [formData, setFormData] = useState<RecipeFormData>({
@@ -69,7 +69,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     ingredients: [],
     steps: [],
     principalPictures: [],
-    userName: getUserName(),
+    userId: getUserId(),
     category: [],
     duration: 0,
     difficulty: "",
@@ -257,6 +257,20 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         return { success: false, message: "Por favor completa todos los campos obligatorios" };
       }
 
+      // Mapear dificultad al formato esperado por el backend
+      const mapDifficulty = (difficulty: string) => {
+        switch (difficulty) {
+          case "facil":
+            return "Fácil";
+          case "media":
+            return "Medio";
+          case "dificil":
+            return "Difícil";
+          default:
+            return "Medio";
+        }
+      };
+
       // Preparar datos para el backend
       const recipeData: CreateRecipeRequest = {
         name: formData.name,
@@ -264,10 +278,10 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         ingredients: formData.ingredients,
         steps: formData.steps,
         principalPictures: formData.principalPictures,
-        userName: formData.userName,
+        userId: formData.userId,
         category: formData.category,
         duration: formData.duration,
-        difficulty: formData.difficulty as "facil" | "media" | "dificil",
+        difficulty: mapDifficulty(formData.difficulty),
         servings: formData.servings,
       };
 
@@ -321,7 +335,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       ingredients: [],
       steps: [],
       principalPictures: [],
-      userName: getUserName(),
+      userId: getUserId(),
       category: [],
       duration: 0,
       difficulty: "",
