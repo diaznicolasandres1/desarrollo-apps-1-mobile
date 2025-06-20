@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import Toast from "react-native-toast-message";
 import { useAuth } from "./auth.context";
 
 interface SyncContextProps {
@@ -62,6 +63,11 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
                 updatedReceipts = updatedReceipts.filter(
                   (r) => r.name !== receipt.name
                 );
+                Toast.show({
+                  type: "success",
+                  text1: "Se ha creado la receta",
+                  text2: `"${receipt.name}" ha sido creada exitosamente.`,
+                });
               }
             } catch (error) {
               console.error("Error creating recipe:", error);
