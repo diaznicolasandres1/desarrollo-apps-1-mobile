@@ -3,15 +3,21 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback } from "react";
 
 export function useStorage<T = any>() {
-  const getItem = useCallback(async (key: string): Promise<T | null> => {
-    try {
-      const jsonValue = await AsyncStorage.getItem(key);
-      return jsonValue != null ? JSON.parse(jsonValue) : null;
-    } catch (e) {
-      console.error("Error getting item from storage", e);
-      return null;
-    }
-  }, []);
+  const getItem = useCallback(
+    async (key: string, defaultValue?: T): Promise<T | null> => {
+      try {
+        const jsonValue = await AsyncStorage.getItem(key);
+        if (jsonValue != null) {
+          return JSON.parse(jsonValue);
+        }
+        return defaultValue !== undefined ? defaultValue : null;
+      } catch (e) {
+        console.error("Error getting item from storage", e);
+        return defaultValue !== undefined ? defaultValue : null;
+      }
+    },
+    []
+  );
 
   const setItem = useCallback(async (key: string, value: T): Promise<void> => {
     try {
