@@ -80,7 +80,7 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       }
     };
 
-    intervalRef.current = window.setInterval(checkCreateReceiptSync, 10000);
+    intervalRef.current = setInterval(checkCreateReceiptSync, 10000);
 
     return () => {
       if (intervalRef.current) {
