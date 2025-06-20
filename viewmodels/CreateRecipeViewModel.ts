@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { recipeService, CreateRecipeRequest } from "@/resources/RecipeService";
 import { useAuth } from "@/context/auth.context";
+import { useSync } from "@/context/sync.context";
+import { CreateRecipeRequest } from "@/resources/receipt";
+import { useState } from "react";
 
 export interface Ingredient {
   name: string;
@@ -36,17 +37,17 @@ export interface RecipeFormData {
 // Mock function para simular subida de imagen
 export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
   // Retornar URL mock de imagen
   const mockImages = [
     "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
     "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
     "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400",
     "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400",
-    "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400"
+    "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400",
   ];
-  
+
   return mockImages[Math.floor(Math.random() * mockImages.length)];
 };
 
@@ -54,7 +55,9 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const { user, isGuest } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
-  
+
+  const { addReceiptToStorage } = useSync();
+
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
     if (isGuest) {
@@ -84,7 +87,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       ...prev,
       [field]: value,
     }));
-    
+
     // Limpiar error del campo si existe
     if (errors[field]) {
       setErrors((prev) => {
@@ -167,14 +170,14 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const updateIngredient = (index: number, ingredient: Ingredient) => {
     setFormData((prev) => ({
       ...prev,
-      ingredients: prev.ingredients.map((item, i) => 
+      ingredients: prev.ingredients.map((item, i) =>
         i === index ? ingredient : item
       ),
     }));
   };
 
   // Pasos
-  const addStep = (step: Omit<Step, 'id'>) => {
+  const addStep = (step: Omit<Step, "id">) => {
     const newStep: Step = {
       ...step,
       id: stepIdCounter.toString(),
@@ -183,7 +186,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       ...prev,
       steps: [...prev.steps, newStep],
     }));
-    setStepIdCounter(prev => prev + 1);
+    setStepIdCounter((prev) => prev + 1);
   };
 
   const removeStep = (index: number) => {
@@ -196,9 +199,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const updateStep = (index: number, step: Step) => {
     setFormData((prev) => ({
       ...prev,
-      steps: prev.steps.map((item, i) => 
-        i === index ? step : item
-      ),
+      steps: prev.steps.map((item, i) => (i === index ? step : item)),
     }));
   };
 
@@ -214,9 +215,9 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        image: "Error al subir la imagen"
+        image: "Error al subir la imagen",
       }));
     } finally {
       setIsLoading(false);
@@ -247,14 +248,17 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     }));
   };
 
-  const submitRecipe = async (): Promise<{ success: boolean; message?: string }> => {
+  const submitRecipe = async () => {
     setIsLoading(true);
     setErrors({});
 
     try {
       // Validar datos antes de enviar
       if (!validateStep(2)) {
-        return { success: false, message: "Por favor completa todos los campos obligatorios" };
+        return {
+          success: false,
+          message: "Por favor completa todos los campos obligatorios",
+        };
       }
 
       // Mapear dificultad al formato esperado por el backend
@@ -283,37 +287,26 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         duration: formData.duration,
         difficulty: mapDifficulty(formData.difficulty),
         servings: formData.servings,
+        status: "creating",
       };
 
       console.log("Enviando receta al backend...");
-      const response = await recipeService.createRecipe(recipeData);
 
-      if (response.success) {
-        console.log("Receta creada exitosamente:", response);
-        // Resetear formulario después del éxito
-        resetForm();
-        
-        // Ejecutar callback de navegación si se proporciona
-        if (onRecipeCreated) {
-          onRecipeCreated();
-        }
-        
-        return { success: true, message: response.message };
-      } else {
-        return { success: false, message: response.message || "Error al crear la receta" };
-      }
-
+      await addReceiptToStorage(recipeData);
+      resetForm();
+      onRecipeCreated?.();
     } catch (error) {
       console.error("Error al crear receta:", error);
-      
+
       let errorMessage = "Error al crear la receta";
-      
+
       if (error instanceof Error) {
-        if (error.message.includes('HTTP 400')) {
-          errorMessage = "Datos inválidos. Por favor revisa la información ingresada.";
-        } else if (error.message.includes('HTTP 401')) {
+        if (error.message.includes("HTTP 400")) {
+          errorMessage =
+            "Datos inválidos. Por favor revisa la información ingresada.";
+        } else if (error.message.includes("HTTP 401")) {
           errorMessage = "No autorizado. Por favor inicia sesión nuevamente.";
-        } else if (error.message.includes('HTTP 500')) {
+        } else if (error.message.includes("HTTP 500")) {
           errorMessage = "Error del servidor. Por favor intenta más tarde.";
         } else {
           errorMessage = error.message;
@@ -322,7 +315,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
       setErrors({ submit: errorMessage });
       return { success: false, message: errorMessage };
-
     } finally {
       setIsLoading(false);
     }
@@ -352,7 +344,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     formData,
     isLoading,
     errors,
-    
+
     // Actions
     updateFormData,
     nextStep,
@@ -371,4 +363,4 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     resetForm,
     validateStep,
   };
-}; 
+};
