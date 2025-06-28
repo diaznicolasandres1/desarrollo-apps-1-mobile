@@ -26,6 +26,7 @@ export const useFeaturedRecipes = () => {
       id: recipe._id,
       title: recipe.name,
       img: imageUri.uri,
+
       description: recipe.description,
       time: `${recipe.duration} min • ${recipe.difficulty}`
     };

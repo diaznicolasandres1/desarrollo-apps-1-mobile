@@ -1,65 +1,79 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
-import { useRouter } from "expo-router";
 import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/context/auth.context";
+import { useSync } from "@/context/sync.context";
+import { CreateRecipeRequest } from "@/resources/receipt";
 import { Ionicons } from "@expo/vector-icons";
-import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
+import { useFocusEffect } from "@react-navigation/native";
+import { useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Chip } from "react-native-paper";
 import { useAuth } from "@/context/auth.context";
 import { getFirstImageUri } from "@/utils/imageUtils";
+import { RecipeDetail, recipeService } from "../../../resources/RecipeService";
 
 export default function MyRecipes() {
   const router = useRouter();
-  const {  user } = useAuth();
-
+  const { user } = useAuth();
+  const { getReceiptsInStorage } = useSync();
   const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [storedRecipes, setStoredRecipes] = useState<CreateRecipeRequest[]>([]);
 
-  useEffect(() => {
-    const fetchUserRecipes = async () => {
-      try {
-        if (!user?._id) {
-          setError("No hay usuario autenticado");
-          setLoading(false);
-          return;
-        }
-        const list = await recipeService.getUserRecipes(user._id);
-        setRecipes(list);
-      } catch (err) {
-        console.error(err);
-        setError("No se pudo cargar las recetas");
-      } finally {
-        setLoading(false);
+  const loadRecipesFromStorage = useCallback(async () => {
+    try {
+      const storedRecipes = await getReceiptsInStorage("createReceiptSync", []);
+      if (storedRecipes && storedRecipes.length > 0) {
+        setStoredRecipes(storedRecipes);
       }
-    };
-    fetchUserRecipes();
+    } catch (err) {
+      console.error(err);
+    }
+  }, [getReceiptsInStorage]);
+
+  const fetchUserRecipes = useCallback(async () => {
+    try {
+      if (!user?._id) {
+        setLoading(false);
+        return;
+      }
+      const list = await recipeService.getUserRecipes(user._id);
+      setRecipes(list);
+    } finally {
+      setLoading(false);
+    }
   }, [user?._id]);
+
+  const syncReceipts = useCallback(async () => {
+    try {
+      loadRecipesFromStorage();
+      fetchUserRecipes();
+    } catch (error) {
+      console.error("Error syncing receipts:", error);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      syncReceipts();
+    }, [syncReceipts])
+  );
 
   if (loading) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Mis recetas" }}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
-        </View>
-      </ScreenLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <ScreenLayout alternativeHeader={{ title: "Mis recetas" }}>
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error}</Text>
         </View>
       </ScreenLayout>
     );
@@ -85,46 +99,93 @@ export default function MyRecipes() {
                 <Text style={styles.recipeDescription} numberOfLines={2}>
                   {recipe.description}
                 </Text>
-
-                <View style={styles.recipeInfoRow}>
-                  <Chip
-                    style={[
-                      styles.chipBase,
-                      recipe.status === "pending_to_approve"
-                        ? styles.chipPending
-                        : styles.chipApproved,
-                    ]}
-                    textStyle={[
-                      styles.chipTextBase,
-                      recipe.status === "pending_to_approve"
-                        ? styles.chipTextPending
-                        : styles.chipTextApproved,
-                    ]}
-                  >
-                    {recipe.status === "pending_to_approve"
-                      ? "Pendiente"
-                      : recipe.status === "approved"
-                        ? "Aprobada"
-                        : recipe.status}
-                  </Chip>
-                  <TouchableOpacity
-                    onPress={() => router.push(`/logged/receipt/${recipe._id}`)}
-                  >
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={Colors.orange.orange900}
-                    />
-                  </TouchableOpacity>
-                </View>
               </View>
+              {storedRecipes.map((recipe, index) => (
+                <RecipeItem
+                  key={`stored-${index}`}
+                  recipe={recipe}
+                  onPress={() => {}}
+                />
+              ))}
             </View>
-          ))}
+          ) : (
+            <View style={styles.centered}>
+              <Text style={styles.errorText}>
+                No encontramos recetas creadas por vos.
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </ScreenLayout>
   );
 }
+
+const RecipeItem = ({
+  recipe,
+  onPress,
+}: {
+  recipe: RecipeDetail | CreateRecipeRequest;
+  onPress: () => void;
+}) => {
+  return (
+    <View style={styles.recipeItem}>
+      <Image
+        source={{
+          uri:
+            recipe.principalPictures.length > 0
+              ? recipe.principalPictures[0].url
+              : "https://via.placeholder.com/120x120.png?text=Sin+imagen",
+        }}
+        style={styles.recipeImage}
+        resizeMode="cover"
+      />
+
+      <View style={styles.recipeInfo}>
+        <Text style={styles.recipeTitle}>{recipe.name}</Text>
+        <Text style={styles.recipeDescription} numberOfLines={2}>
+          {recipe.description}
+        </Text>
+
+        <View style={styles.recipeInfoRow}>
+          <Chip
+            style={[
+              styles.chipBase,
+              recipe.status === "creating"
+                ? styles.chipCreating
+                : recipe.status === "pending_to_approve"
+                  ? styles.chipPending
+                  : styles.chipApproved,
+            ]}
+            textStyle={[
+              styles.chipTextBase,
+              recipe.status === "creating"
+                ? styles.chipTextCreating
+                : recipe.status === "pending_to_approve"
+                  ? styles.chipTextPending
+                  : styles.chipTextApproved,
+            ]}
+          >
+            {recipe.status === "creating"
+              ? "Creando"
+              : recipe.status === "pending_to_approve"
+                ? "Pendiente"
+                : recipe.status === "approved"
+                  ? "Aprobada"
+                  : recipe.status}
+          </Chip>
+          <TouchableOpacity onPress={onPress}>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={Colors.orange.orange900}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   centered: {
@@ -209,6 +270,13 @@ const styles = StyleSheet.create({
   chipPending: {
     backgroundColor: Colors.gray.gray100,
     borderColor: Colors.gray.gray400,
+  },
+  chipCreating: {
+    backgroundColor: Colors.orange.orange100,
+    borderColor: Colors.orange.orange900,
+  },
+  chipTextCreating: {
+    color: Colors.orange.orange900,
   },
   chipTextBase: {
     fontSize: 12,
