@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { recipeService, CreateRecipeRequest } from "@/resources/RecipeService";
 import { useAuth } from "@/context/auth.context";
+import { imageToBase64 } from "@/utils/imageUtils";
 
 export interface Ingredient {
   name: string;
@@ -38,16 +39,15 @@ export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Retornar URL mock de imagen
-  const mockImages = [
-    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-    "https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400",
-    "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400",
-    "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400",
-    "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400"
+  // Generar un base64 mock para simular una imagen
+  // En una implementación real, esto vendría de la cámara o galería
+  const mockBase64Images = [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
   ];
   
-  return mockImages[Math.floor(Math.random() * mockImages.length)];
+  return mockBase64Images[Math.floor(Math.random() * mockBase64Images.length)];
 };
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
@@ -206,8 +206,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const addPrincipalPicture = async (description: string = "") => {
     setIsLoading(true);
     try {
-      const url = await mockImageUpload();
-      const newPicture: PrincipalPicture = { url, description };
+      const base64Image = await mockImageUpload();
+      const newPicture: PrincipalPicture = { url: base64Image, description };
       setFormData((prev) => ({
         ...prev,
         principalPictures: [...prev.principalPictures, newPicture],

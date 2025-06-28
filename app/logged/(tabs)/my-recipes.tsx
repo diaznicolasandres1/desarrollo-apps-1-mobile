@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
 import { Chip } from "react-native-paper";
 import { useAuth } from "@/context/auth.context";
+import { getFirstImageUri } from "@/utils/imageUtils";
 
 export default function MyRecipes() {
   const router = useRouter();
@@ -74,12 +75,7 @@ export default function MyRecipes() {
           {recipes.map((recipe) => (
             <View key={recipe._id} style={styles.recipeItem}>
               <Image
-                source={{
-                  uri:
-                    recipe.principalPictures.length > 0
-                      ? recipe.principalPictures[0].url
-                      : "https://via.placeholder.com/120x120.png?text=Sin+imagen",
-                }}
+                source={getFirstImageUri(recipe.principalPictures)}
                 style={styles.recipeImage}
                 resizeMode="cover"
               />

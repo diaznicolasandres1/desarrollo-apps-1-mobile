@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { recipeService, RecipeDetail } from '../resources/RecipeService';
+import { getFirstImageUri } from '../utils/imageUtils';
 
 interface FeaturedRecipe {
   id: string;
@@ -11,7 +12,7 @@ interface FeaturedRecipe {
 }
 
 const FEATURED_RECIPES_KEY = 'featured_recipes_cache';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos en milisegundos
+const CACHE_DURATION = 1 * 60 * 1000; // 1 minutos en milisegundos
 
 export const useFeaturedRecipes = () => {
   const [recipes, setRecipes] = useState<FeaturedRecipe[]>([]);
@@ -19,12 +20,12 @@ export const useFeaturedRecipes = () => {
   const [error, setError] = useState<string | null>(null);
 
   const transformRecipeData = (recipe: RecipeDetail): FeaturedRecipe => {
+    const imageUri = getFirstImageUri(recipe.principalPictures);
+    
     return {
       id: recipe._id,
       title: recipe.name,
-      img: recipe.principalPictures && recipe.principalPictures.length > 0 
-        ? recipe.principalPictures[0].url 
-        : "https://via.placeholder.com/120x120.png?text=Sin+imagen",
+      img: imageUri.uri,
       description: recipe.description,
       time: `${recipe.duration} min • ${recipe.difficulty}`
     };
