@@ -16,7 +16,7 @@ const StepOne: React.FC<StepOneProps> = ({
   recipeName, 
   setRecipeName, 
   onNext, 
-  errors
+  errors 
 }) => {
   const maxCharacters = 50;
 

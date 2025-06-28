@@ -22,29 +22,43 @@ import { RecipeDetail, recipeService } from "../../../resources/RecipeService";
 export default function MyRecipes() {
   const router = useRouter();
   const { user } = useAuth();
-  const { 
-    userRecipes, 
-    pendingRecipes, 
-    fetchUserRecipes, 
-    isLoadingUserRecipes 
-  } = useSync();
-  
+  const { getReceiptsInStorage } = useSync();
+  const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [storedRecipes, setStoredRecipes] = useState<CreateRecipeRequest[]>([]);
 
-  const syncReceipts = useCallback(async () => {
+  const loadRecipesFromStorage = useCallback(async () => {
+    try {
+      const storedRecipes = await getReceiptsInStorage("createReceiptSync", []);
+      if (storedRecipes && storedRecipes.length > 0) {
+        setStoredRecipes(storedRecipes);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, [getReceiptsInStorage]);
+
+  const fetchUserRecipes = useCallback(async () => {
     try {
       if (!user?._id) {
         setLoading(false);
         return;
       }
-      
-      await fetchUserRecipes();
-    } catch (error) {
-      console.error("Error syncing receipts:", error);
+      const list = await recipeService.getUserRecipes(user._id);
+      setRecipes(list);
     } finally {
       setLoading(false);
     }
-  }, [user?._id, fetchUserRecipes]);
+  }, [user?._id]);
+
+  const syncReceipts = useCallback(async () => {
+    try {
+      loadRecipesFromStorage();
+      fetchUserRecipes();
+    } catch (error) {
+      console.error("Error syncing receipts:", error);
+    }
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -53,7 +67,7 @@ export default function MyRecipes() {
     }, [syncReceipts])
   );
 
-  if (loading || isLoadingUserRecipes) {
+  if (loading) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Mis recetas" }}>
         <View style={styles.centered}>
@@ -70,9 +84,9 @@ export default function MyRecipes() {
           <Text style={styles.sectionTitle}>Tus creaciones:</Text>
         </View>
         <View style={styles.recipesContainer}>
-          {userRecipes.length > 0 || pendingRecipes.length > 0 ? (
+          {recipes.length > 0 || storedRecipes.length > 0 ? (
             <>
-              {userRecipes.map((recipe) => (
+              {recipes.map((recipe) => (
                 <RecipeItem
                   key={recipe._id}
                   recipe={recipe}
@@ -80,7 +94,7 @@ export default function MyRecipes() {
                 />
               ))}
 
-              {pendingRecipes.map((recipe, index) => (
+              {storedRecipes.map((recipe, index) => (
                 <RecipeItem
                   key={`stored-${index}`}
                   recipe={recipe}
