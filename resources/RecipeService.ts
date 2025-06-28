@@ -175,6 +175,28 @@ class RecipeService {
       throw error;
     }
   }
+
+  async getFeaturedRecipes(limit: number = 3, sort: string = "desc"): Promise<RecipeDetail[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/recipes?limit=${limit}&sort=${sort}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        const result: RecipeDetail[] = await response.json();
+        return result;
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error obteniendo recetas destacadas:', error);
+      throw error;
+    }
+  }
 }
 
 export const recipeService = new RecipeService();
