@@ -1,12 +1,15 @@
 import { useStorage } from "@/hooks/useLocalStorage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { createRecipe, CreateRecipeRequest } from "@/resources/receipt";
+import { RecipeDetail, recipeService } from "@/resources/RecipeService";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
 import Toast from "react-native-toast-message";
 import { useAuth } from "./auth.context";
@@ -17,6 +20,10 @@ interface SyncContextProps {
     key: string,
     defaultValue?: CreateRecipeRequest[] | undefined
   ) => Promise<CreateRecipeRequest[] | null>;
+  userRecipes: RecipeDetail[];
+  pendingRecipes: CreateRecipeRequest[];
+  fetchUserRecipes: (forceFromAPI?: boolean) => Promise<void>;
+  isLoadingUserRecipes: boolean;
 }
 
 export const SyncContext = createContext<SyncContextProps | undefined>(
@@ -32,14 +39,88 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const { getItem: getReceiptsInStorage, setItem: setReceiptsInStorage } =
     useStorage<CreateRecipeRequest[]>();
+  const { getItem: getUserRecipesFromStorage, setItem: setUserRecipesToStorage } =
+    useStorage<RecipeDetail[]>();
   const intervalRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
+  
+  const [userRecipes, setUserRecipes] = useState<RecipeDetail[]>([]);
+  const [pendingRecipes, setPendingRecipes] = useState<CreateRecipeRequest[]>([]);
+  const [isLoadingUserRecipes, setIsLoadingUserRecipes] = useState(false);
 
   const addReceiptToStorage = async (receipt: CreateRecipeRequest) => {
     const receipts = await getReceiptsInStorage("createReceiptSync", []);
     const updatedReceipts = receipts ? [...receipts, receipt] : [receipt];
     await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+    
+    setPendingRecipes(updatedReceipts);
   };
+
+  const fetchUserRecipes = useCallback(async (forceFromAPI = false) => {
+    if (!user?._id || !isAuthenticated) {
+      setUserRecipes([]);
+      return;
+    }
+
+    setIsLoadingUserRecipes(true);
+    try {
+      const storageKey = `userRecipes_${user._id}`;
+      
+      // Primero intentamos obtener desde AsyncStorage
+      if (!forceFromAPI) {
+        const cachedRecipes = await getUserRecipesFromStorage(storageKey, []);
+        if (cachedRecipes && cachedRecipes.length > 0) {
+          setUserRecipes(cachedRecipes);
+          setIsLoadingUserRecipes(false);
+          return;
+        }
+      }
+
+      // Si no hay datos en caché o se fuerza desde API, consultamos el servidor
+      if (isConnected) {
+        console.log("🌐 Obteniendo recetas desde la API...");
+        const recipes = await recipeService.getUserRecipes(user._id);
+        setUserRecipes(recipes);
+        
+        // Guardamos en AsyncStorage para futuras consultas
+        await setUserRecipesToStorage(storageKey, recipes);
+        console.log(`✅ ${recipes.length} recetas del usuario obtenidas desde API`);
+      } else {
+        setUserRecipes([]);
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener recetas del usuario:", error);
+      // Si falla la API, intentamos usar datos en caché como fallback
+      try {
+        const storageKey = `userRecipes_${user._id}`;
+        const cachedRecipes = await getUserRecipesFromStorage(storageKey, []);
+        if (cachedRecipes) {
+          setUserRecipes(cachedRecipes);
+        } else {
+          setUserRecipes([]);
+        }
+      } catch (cacheError) {
+        setUserRecipes([]);
+      }
+    } finally {
+      setIsLoadingUserRecipes(false);
+    }
+  }, [user?._id, isAuthenticated, isConnected, getUserRecipesFromStorage, setUserRecipesToStorage]);
+
+
+
+  useEffect(() => {
+    const loadPendingRecipes = async () => {
+      try {
+        const receipts = await getReceiptsInStorage("createReceiptSync", []);
+        setPendingRecipes(receipts || []);
+      } catch (error) {
+        console.error("Error loading pending recipes:", error);
+      }
+    };
+    
+    loadPendingRecipes();
+  }, []);
 
   useEffect(() => {
     const checkCreateReceiptSync = async () => {
@@ -74,6 +155,11 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
             }
           }
           await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          setPendingRecipes(updatedReceipts);
+          
+          if (updatedReceipts.length < receipts.length) {
+            fetchUserRecipes();
+          }
         }
       } finally {
         isSyncingRef.current = false;
@@ -94,6 +180,10 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       value={{
         addReceiptToStorage,
         getReceiptsInStorage,
+        userRecipes,
+        pendingRecipes,
+        fetchUserRecipes,
+        isLoadingUserRecipes,
       }}
     >
       {children}
