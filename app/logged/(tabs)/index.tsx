@@ -9,7 +9,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
+import { useFeaturedRecipes } from "@/hooks/useFeaturedRecipes";
 
 const categories = [
   {
@@ -30,47 +32,91 @@ const categories = [
   },
 ];
 
-const recipes = [
-  {
-    title: "Sopa de verduras",
-    img: "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    id: "1",
-    description: "Sopa reconfortante con una mezcla de verduras de temporada.",
-    time: "10 min • Fácil",
-  },
-  {
-    title: "Ensalada de Aguacate",
-    img: "https://enmicasa.com/wp-content/uploads/2014/04/ensalada-de-lechuga-y-naranja.jpg",
-    id: "2",
-    description:
-      "Una ensalada fresca y nutritiva con aguacate, tomate y limón, perfecta para los días calurosos de verano.",
-    time: "15 min • Fácil",
-  },
-  {
-    title: "Pollo frito",
-    img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQW0IhDJLt4MXaA1vnuE0X6LS6kqRzaA6w4MgbdoeL57bsONvfPWrIYnSlr_jBP14DoFMs&usqp=CAU",
-    id: "3",
-    description: "Pollo frito estilo americano.",
-    time: "45 min • Medio",
-  },
-  {
-    title: "Tarta de zapallitos",
-    img: "https://www.rionegro.com.ar/wp-content/uploads/2021/12/264105803_1201331497024538_3460023307247946621_n.jpg?w=720",
-    id: "4",
-    description: "Tarta de zapallitos con queso y cebolla.",
-    time: "30 min • Fácil",
-  },
-  {
-    title: "Fideos con salsa de tomate",
-    img: "https://lh4.googleusercontent.com/proxy/SPXNSWtah70gXbcwplD-y6ilNBemhI3ztgH9uTynXlaI9ewxbMpLi0M_hjfk9zHONXC7mqo0DfR15sH9ZWrNdPaT43OaBHeilZaUrRVqDmzIzs-6ic2m1nYo7pmPxg",
-    id: "5",
-    description: "Fideos con salsa de tomate y queso.",
-    time: "20 min • Fácil",
-  },
-];
-
 export default function HomeScreen() {
   const router = useRouter();
+  const { recipes, loading, error, refreshRecipes } = useFeaturedRecipes();
+
+  const renderFeaturedRecipes = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.orange.orange900} />
+          <Text style={styles.loadingText}>Cargando recetas destacadas...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refreshRecipes}>
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (recipes.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No hay recetas destacadas disponibles</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.recipesContainer}>
+        {recipes.map(({ id, title, img, description, time }) => (
+          <View key={id} style={styles.recipeItem}>
+            <View style={styles.recipeImageContainer}>
+              <Image
+                source={{
+                  uri: img,
+                }}
+                style={styles.recipeImage}
+                resizeMode="cover"
+              />
+            </View>
+            <View style={styles.recipeInfo}>
+              <Text style={styles.recipeTitle}>{title}</Text>
+              <Text
+                style={styles.recipeDescription}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {description}
+              </Text>
+              <View style={styles.recipeInfoRow}>
+                <View style={styles.recipeInfoRowItem}>
+                  <Ionicons
+                    name="time-outline"
+                    size={28}
+                    color={Colors.orange.orange900}
+                  />
+                  <Text>{time}</Text>
+                </View>
+                <View style={styles.recipeInfoRowItem}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      router.push(`/logged/receipt/${id}`);
+                    }}
+                  >
+                    <Ionicons
+                      name="arrow-forward"
+                      size={20}
+                      color={Colors.orange.orange900}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <ScreenLayout>
       <ScrollView>
@@ -100,60 +146,15 @@ export default function HomeScreen() {
         <View>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Destacadas</Text>
-            <Ionicons
-              name="arrow-forward"
-              size={20}
-              color={Colors.orange.orange900}
-            />
+            <TouchableOpacity onPress={refreshRecipes}>
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={Colors.orange.orange900}
+              />
+            </TouchableOpacity>
           </View>
-          <View style={styles.recipesContainer}>
-            {recipes.map(({ id, title, img, description, time }) => (
-              <View key={id} style={styles.recipeItem}>
-                <View style={styles.recipeImageContainer}>
-                  <Image
-                    source={{
-                      uri: img,
-                    }}
-                    style={styles.recipeImage}
-                    resizeMode="cover"
-                  />
-                </View>
-                <View style={styles.recipeInfo}>
-                  <Text style={styles.recipeTitle}>{title}</Text>
-                  <Text
-                    style={styles.recipeDescription}
-                    numberOfLines={2}
-                    ellipsizeMode="tail"
-                  >
-                    {description}
-                  </Text>
-                  <View style={styles.recipeInfoRow}>
-                    <View style={styles.recipeInfoRowItem}>
-                      <Ionicons
-                        name="time-outline"
-                        size={28}
-                        color={Colors.orange.orange900}
-                      />
-                      <Text>{time}</Text>
-                    </View>
-                    <View style={styles.recipeInfoRowItem}>
-                      <TouchableOpacity
-                        onPress={() => {
-                          router.push(`/logged/receipt/${id}`);
-                        }}
-                      >
-                        <Ionicons
-                          name="arrow-forward"
-                          size={20}
-                          color={Colors.orange.orange900}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
+          {renderFeaturedRecipes()}
         </View>
       </ScrollView>
     </ScreenLayout>
@@ -250,5 +251,48 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: "center",
     justifyContent: "center",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: Colors.orange.orange900,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    marginBottom: 20,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: Colors.orange.orange900,
+  },
+  retryButton: {
+    padding: 10,
+    backgroundColor: Colors.orange.orange900,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "white",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: Colors.orange.orange900,
   },
 });
