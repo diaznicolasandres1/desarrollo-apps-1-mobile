@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface Ingredient {
   name: string;
@@ -56,7 +56,20 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
 
-  const { addReceiptToStorage } = useSync();
+  const { 
+    addReceiptToStorage, 
+    fetchUserRecipes,
+    userRecipes,
+    pendingRecipes,
+    isLoadingUserRecipes 
+  } = useSync();
+
+  // Obtener las recetas del usuario al inicializar
+  useEffect(() => {
+    if (!isGuest && user?._id) {
+      fetchUserRecipes();
+    }
+  }, [user?._id, isGuest, fetchUserRecipes]);
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -82,6 +95,25 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Función para verificar si existe una receta con el mismo nombre
+  const checkDuplicateRecipeName = (name: string): boolean => {
+    if (!name.trim()) return false;
+    
+    const trimmedName = name.trim().toLowerCase();
+    
+    // Verificar en las recetas ya sincronizadas
+    const existsInSynced = userRecipes.some(recipe => 
+      recipe.name.toLowerCase() === trimmedName
+    );
+    
+    // Verificar en las recetas pendientes de sincronización
+    const existsInPending = pendingRecipes.some(recipe => 
+      recipe.name.toLowerCase() === trimmedName
+    );
+    
+    return existsInSynced || existsInPending;
+  };
+
   const updateFormData = (field: keyof RecipeFormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
@@ -105,9 +137,10 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       case 1:
         if (!formData.name.trim()) {
           newErrors.name = "El nombre de la receta es obligatorio";
-        }
-        if (formData.name.length > 50) {
+        } else if (formData.name.length > 50) {
           newErrors.name = "El nombre no puede superar los 50 caracteres";
+        } else if (!isGuest && checkDuplicateRecipeName(formData.name)) {
+          newErrors.name = "Ya tienes una receta con este nombre";
         }
         break;
       case 2:
@@ -295,6 +328,11 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       await addReceiptToStorage(recipeData);
       resetForm();
       onRecipeCreated?.();
+      
+      return {
+        success: true,
+        message: "Receta guardada exitosamente"
+      };
     } catch (error) {
       console.error("Error al crear receta:", error);
 
@@ -342,7 +380,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     // State
     currentStep,
     formData,
-    isLoading,
+    isLoading: isLoading || isLoadingUserRecipes,
     errors,
 
     // Actions
