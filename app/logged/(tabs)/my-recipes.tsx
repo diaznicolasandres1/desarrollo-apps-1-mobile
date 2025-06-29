@@ -1,11 +1,10 @@
 import ScreenLayout from "@/components/ScreenLayout";
-import { Colors } from "@/constants/Colors";
-import { useAuth } from "@/context/auth.context";
+import { Colors } from "@/constants/Colors"; 
 import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+import { useRouter } from "expo-router"; 
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -86,20 +85,24 @@ export default function MyRecipes() {
           <Text style={styles.sectionTitle}>Tus creaciones:</Text>
         </View>
         <View style={styles.recipesContainer}>
-          {recipes.map((recipe) => (
-            <View key={recipe._id} style={styles.recipeItem}>
-              <Image
-                source={getFirstImageUri(recipe.principalPictures)}
-                style={styles.recipeImage}
-                resizeMode="cover"
-              />
+          {recipes.length > 0 ? (
+            <>
+              {recipes.map((recipe) => (
+                <View key={recipe._id} style={styles.recipeItem}>
+                  <Image
+                    source={getFirstImageUri(recipe.principalPictures)}
+                    style={styles.recipeImage}
+                    resizeMode="cover"
+                  />
 
-              <View style={styles.recipeInfo}>
-                <Text style={styles.recipeTitle}>{recipe.name}</Text>
-                <Text style={styles.recipeDescription} numberOfLines={2}>
-                  {recipe.description}
-                </Text>
-              </View>
+                  <View style={styles.recipeInfo}>
+                    <Text style={styles.recipeTitle}>{recipe.name}</Text>
+                    <Text style={styles.recipeDescription} numberOfLines={2}>
+                      {recipe.description}
+                    </Text>
+                  </View>
+                </View>
+              ))}
               {storedRecipes.map((recipe, index) => (
                 <RecipeItem
                   key={`stored-${index}`}
@@ -107,7 +110,7 @@ export default function MyRecipes() {
                   onPress={() => {}}
                 />
               ))}
-            </View>
+            </>
           ) : (
             <View style={styles.centered}>
               <Text style={styles.errorText}>
