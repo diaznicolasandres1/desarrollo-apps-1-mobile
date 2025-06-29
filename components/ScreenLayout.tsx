@@ -10,6 +10,7 @@ const ScreenLayout = ({
   children: React.ReactNode;
   alternativeHeader?: {
     title?: string;
+    actions?: React.ReactNode;
   };
 }) => {
   return (
@@ -17,7 +18,7 @@ const ScreenLayout = ({
       {!alternativeHeader ? (
         <Header />
       ) : (
-        <AlternativeHeader title={alternativeHeader.title} />
+        <AlternativeHeader {...alternativeHeader} />
       )}
       {children}
     </View>

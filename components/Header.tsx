@@ -31,8 +31,10 @@ const Header = () => {
 
 export const AlternativeHeader = ({
   title = "Recetas",
+  actions = null,
 }: {
   title?: string;
+  actions?: React.ReactNode;
 }) => {
   const router = useRouter();
 
@@ -42,11 +44,7 @@ export const AlternativeHeader = ({
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back-outline" size={25} />
         </TouchableOpacity>
-        <View style={styles.iconGroup}>
-          <TouchableOpacity onPress={() => router.push("/logged/create")}>
-            <Ionicons name="add-circle-outline" size={25} />
-          </TouchableOpacity>
-        </View>
+        <View style={styles.iconGroup}>{actions}</View>
       </View>
       <Text style={styles.alternativeHeaderText}>{title}</Text>
     </View>

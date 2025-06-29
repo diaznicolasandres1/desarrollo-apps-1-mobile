@@ -1,111 +1,198 @@
+import CommentForm from "@/components/CommentForm";
+import FavoriteButton from "@/components/FavoriteButton";
 import { ImageGallery } from "@/components/ImageGallery";
+import PortionsModal from "@/components/PortionsModal";
 import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
+import { useAuth } from "@/context/auth.context";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getRecipeById, RecipeDetail } from "@/resources/receipt";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
-import React from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 import { Chip, List } from "react-native-paper";
-const receipt = {
-  id: "1",
-  title: "Sopa de verduras",
-  description: "Sopa de verduras con caldo de pollo y cebolla",
-  ingredients: [
-    {
-      name: "Cebolla",
-      quantity: "1",
-      unit: "unidad",
-    },
-    {
-      name: "Zanahoria",
-      quantity: "1",
-      unit: "unidad",
-    },
-    {
-      name: "Pimiento",
-      quantity: "1",
-      unit: "unidad",
-    },
-    {
-      name: "Tomate",
-      quantity: "1",
-      unit: "unidad",
-    },
-    {
-      name: "Caldo de pollo",
-      quantity: "1",
-      unit: "unidad",
-    },
-  ],
-  instructions: [
-    {
-      step: 1,
-      description: "Pelar y cortar las verduras.",
-      image:
-        "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    },
-    {
-      step: 2,
-      description: "Cocinar las verduras en una olla.",
-      image:
-        "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    },
-    {
-      step: 3,
-      description: "Servir.",
-      image:
-        "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    },
-  ],
-  images: [
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-  ],
-  time: "10 min",
-  servings: 2,
-  difficulty: "Facil",
-  categories: ["Sopas", "Vegetariano", "Facil"],
-  comments: [
-    {
-      user: "Juan Perez",
-      comment: "Muy buena receta",
-      rating: 5,
-      date: "2021-01-01",
-      photo:
-        "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    },
-    {
-      user: "Maria Gonzalez",
-      comment: "Muy buena receta, pero me gustaria que tuviera mas sabor",
-      rating: 3,
-      date: "2020-01-01",
-      photo:
-        "https://api-cdn.figma.com/resize/img/1f40/60b3/01b5b190f98fa4f181586e9151f8f42b?expiration=1748217600&signature=6fa8ff9032cab824d77d9a7d579b75c2b876956062d43972414617742aa55743&maxsize=2048&bucket=figma-alpha",
-    },
-  ],
-};
 
 const ReceiptPage = () => {
+  const { isConnected } = useNetworkStatus();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
+
+  const [receipt, setReceipt] = useState<RecipeDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPortionsModal, setShowPortionsModal] = useState(false);
+  const [selectedPortionType, setSelectedPortionType] = useState<
+    "half" | "double" | "custom"
+  >("custom");
+  const [customPortions, setCustomPortions] = useState("");
+  const [currentMultiplier, setCurrentMultiplier] = useState(1);
+
+  const { user } = useAuth();
+
+  const isReceiptOwner = user?._id === receipt?.userId;
+
+  // Funciones para manejar el modal de porciones
+  const handleOpenPortionsModal = () => {
+    setCustomPortions(receipt?.servings.toString() || "");
+    setShowPortionsModal(true);
+  };
+
+  const handlePortionTypeSelect = (type: "half" | "double" | "custom") => {
+    setSelectedPortionType(type);
+    if (type === "half") {
+      setCustomPortions(Math.ceil((receipt?.servings || 1) / 2).toString());
+    } else if (type === "double") {
+      setCustomPortions(((receipt?.servings || 1) * 2).toString());
+    }
+  };
+
+  const handleApplyPortions = () => {
+    const newPortions = parseInt(customPortions) || 1;
+    const originalPortions = receipt?.servings || 1;
+    const multiplier = newPortions / originalPortions;
+    setCurrentMultiplier(multiplier);
+    setShowPortionsModal(false);
+  };
+
+  const handleCancelPortions = () => {
+    setSelectedPortionType("custom");
+    setCustomPortions(receipt?.servings.toString() || "");
+    setShowPortionsModal(false);
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRecipe = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      if (!isConnected) {
+        setError("No hay conexión a internet");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await getRecipeById(id);
+
+        if (isMounted) {
+          if (data) {
+            setReceipt(data);
+          } else {
+            setError("No se pudo obtener la receta");
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error al obtener la receta:", err);
+          setError("Error al cargar la receta");
+          setLoading(false);
+        }
+      }
+    };
+
+    // Limpiar estado anterior cuando cambia el ID
+    setReceipt(null);
+    setError(null);
+    setLoading(true);
+
+    loadRecipe();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, isConnected]);
+
+  if (!id) {
+    return (
+      <ScreenLayout>
+        <View style={{ padding: 20 }}>
+          <Text>Receta no encontrada.</Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (!isConnected && !receipt) {
+    return (
+      <ScreenLayout>
+        <View style={{ padding: 20 }}>
+          <Text>
+            No hay conexión a internet. Por favor, verifica tu conexión.
+          </Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (error && !receipt) {
+    return (
+      <ScreenLayout>
+        <View style={{ padding: 20 }}>
+          <Text>{error}</Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (loading || !receipt) {
+    return (
+      <ScreenLayout>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.azul.azul600} />
+        </View>
+      </ScreenLayout>
+    );
+  }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: receipt.title }}>
+    <ScreenLayout
+      alternativeHeader={{
+        title: receipt?.name || "Receta",
+        actions: (
+          <>
+            {!isReceiptOwner ? (
+              <TouchableOpacity onPress={() => router.push("/logged/create")}>
+                <Ionicons name="add-circle-outline" size={25} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={() => {}}>
+                <Ionicons name="pencil-outline" size={25} />
+              </TouchableOpacity>
+            )}
+            <FavoriteButton id={id} />{" "}
+            <TouchableOpacity onPress={handleOpenPortionsModal}>
+              <Ionicons name="calculator-outline" size={25} />
+            </TouchableOpacity>
+          </>
+        ),
+      }}
+    >
       <ScrollView>
         <View style={styles.pageContainer}>
           <View style={styles.innerPadding}>
-            <ImageGallery images={receipt.images} />
+            <ImageGallery images={receipt.principalPictures} />
             <Text style={styles.description}>{receipt.description}</Text>
 
             <View style={styles.categoryContainer}>
-              {receipt.categories.map((category, i) => (
+              {receipt.category.map((category, i) => (
                 <Chip key={i} style={styles.chip} textStyle={styles.chipText}>
                   {category}
                 </Chip>
@@ -120,7 +207,7 @@ const ReceiptPage = () => {
                   color={Colors.azul.azul600}
                 />
                 <Text style={styles.statLabel}>Tiempo</Text>
-                <Text style={styles.statValue}>{receipt.time}</Text>
+                <Text style={styles.statValue}>{receipt.duration}</Text>
               </View>
 
               <View style={styles.statBox}>
@@ -140,7 +227,15 @@ const ReceiptPage = () => {
                   color={Colors.azul.azul600}
                 />
                 <Text style={styles.statLabel}>Porciones</Text>
-                <Text style={styles.statValue}>{receipt.servings}</Text>
+                <Text style={styles.statValue}>
+                  {Math.round(receipt.servings * currentMultiplier)}
+                  {currentMultiplier !== 1 && (
+                    <Text style={styles.originalText}>
+                      {" "}
+                      (orig: {receipt.servings})
+                    </Text>
+                  )}
+                </Text>
               </View>
             </View>
           </View>
@@ -151,13 +246,20 @@ const ReceiptPage = () => {
 
           <View style={styles.innerPadding}>
             <List.Section style={styles.ingredientList}>
-              {receipt.ingredients.map((ingredient, i) => (
-                <List.Item
-                  key={i}
-                  title={` • ${ingredient.name} (${ingredient.quantity} ${ingredient.unit})`}
-                  titleStyle={styles.ingredientText}
-                />
-              ))}
+              {receipt.ingredients.map((ingredient, i) => {
+                const adjustedQuantity = (
+                  ingredient.quantity * currentMultiplier
+                )
+                  .toFixed(1)
+                  .replace(".0", "");
+                return (
+                  <List.Item
+                    key={i}
+                    title={` • ${ingredient.name} (${adjustedQuantity} ${ingredient.measureType})`}
+                    titleStyle={styles.ingredientText}
+                  />
+                );
+              })}
             </List.Section>
           </View>
 
@@ -166,14 +268,14 @@ const ReceiptPage = () => {
           </View>
 
           <List.Section style={styles.instructionsList}>
-            {receipt.instructions.map((instruction, i) => (
+            {receipt.steps.map((instruction, i) => (
               <List.Item
                 key={i}
-                title={`Paso ${instruction.step}`}
+                title={instruction.title}
                 description={instruction.description}
                 left={() => (
                   <Image
-                    source={{ uri: instruction.image }}
+                    source={{ uri: instruction.mediaResource }}
                     style={styles.instructionImage}
                   />
                 )}
@@ -190,24 +292,24 @@ const ReceiptPage = () => {
 
           <View style={styles.innerPadding}>
             <List.Section style={styles.commentList}>
-              {receipt.comments.map((comment, i) => (
+              {receipt.ratings.map((rating, i) => (
                 <List.Item
                   key={i}
                   title={
                     <View style={styles.commentHeader}>
-                      <Image
-                        source={{ uri: comment.photo }}
-                        style={styles.commentPhoto}
-                      />
                       <View>
-                        <Text style={styles.commentUser}>{comment.user}</Text>
-                        <Text style={styles.commentDate}>{comment.date}</Text>
+                        <Text style={styles.commentUser}>{rating.name}</Text>
+                        <Text style={styles.commentDate}>
+                          {new Date(rating.createdAt).toLocaleDateString(
+                            "es-ES"
+                          )}
+                        </Text>
                       </View>
                     </View>
                   }
                   description={
                     <View style={styles.commentContent}>
-                      <Text style={styles.commentText}>{comment.comment}</Text>
+                      <Text style={styles.commentText}>{rating.comment}</Text>
                       <View style={styles.commentRating}>
                         {Array.from({ length: 5 }, (_, i) => (
                           <Ionicons
@@ -215,7 +317,7 @@ const ReceiptPage = () => {
                             name="star"
                             size={20}
                             color={
-                              i < comment.rating
+                              i < rating.score
                                 ? Colors.orange.orange600
                                 : "gray"
                             }
@@ -229,13 +331,52 @@ const ReceiptPage = () => {
               ))}
             </List.Section>
           </View>
+
+          {!isReceiptOwner && (
+            <View style={styles.innerPadding}>
+              <CommentForm
+                recipeId={id}
+                onCommentAdded={async () => {
+                  try {
+                    const data = await getRecipeById(id);
+                    if (data) {
+                      setReceipt(data);
+                    }
+                  } catch (error) {
+                    console.error("Error al recargar comentarios:", error);
+                  }
+                }}
+              />
+            </View>
+          )}
         </View>
       </ScrollView>
+
+      <PortionsModal
+        visible={showPortionsModal}
+        originalServings={receipt?.servings || 1}
+        selectedPortionType={selectedPortionType}
+        customPortions={customPortions}
+        onPortionTypeSelect={handlePortionTypeSelect}
+        onCustomPortionsChange={(custom: string) => {
+          setCustomPortions(custom);
+          setSelectedPortionType("custom");
+        }}
+        onApply={handleApplyPortions}
+        onCancel={handleCancelPortions}
+      />
     </ScreenLayout>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
   pageContainer: {
     gap: 10,
     paddingBottom: 40,
@@ -285,6 +426,11 @@ const styles = StyleSheet.create({
   statValue: {
     color: "black",
     fontSize: 16,
+  },
+  originalText: {
+    color: "gray",
+    fontSize: 14,
+    fontWeight: "normal",
   },
   sectionHeader: {
     flexDirection: "row",
@@ -346,11 +492,7 @@ const styles = StyleSheet.create({
   commentHeader: {
     flexDirection: "row",
     gap: 10,
-  },
-  commentPhoto: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    alignItems: "center",
   },
   commentUser: {
     fontSize: 16,

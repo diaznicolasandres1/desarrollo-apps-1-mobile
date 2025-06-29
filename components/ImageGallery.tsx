@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { PrincipalPicture } from "@/resources/receipt";
 import React, { useState } from "react";
 import {
   Dimensions,
@@ -13,7 +14,7 @@ import {
 } from "react-native";
 
 type Props = {
-  images: string[];
+  images: PrincipalPicture[];
 };
 
 export const ImageGallery = ({ images }: Props) => {
@@ -34,11 +35,15 @@ export const ImageGallery = ({ images }: Props) => {
       </TouchableOpacity>
 
       <View style={styles.gallery}>
-        <Image source={{ uri: mainImage }} style={styles.mainImage} />
+        <Image source={{ uri: mainImage.url }} style={styles.mainImage} />
 
         <View style={styles.thumbnailColumn}>
           {thumbnails.map((thumb, i) => (
-            <Image key={i} source={{ uri: thumb }} style={styles.thumbnail} />
+            <Image
+              key={i}
+              source={{ uri: thumb.url }}
+              style={styles.thumbnail}
+            />
           ))}
         </View>
       </View>
@@ -48,7 +53,11 @@ export const ImageGallery = ({ images }: Props) => {
           <Text style={styles.modalTitle}>Ver todas</Text>
           <ScrollView contentContainerStyle={styles.modalGrid}>
             {images.map((img, i) => (
-              <Image key={i} source={{ uri: img }} style={styles.modalImage} />
+              <Image
+                key={i}
+                source={{ uri: img.url }}
+                style={styles.modalImage}
+              />
             ))}
           </ScrollView>
           <Pressable
