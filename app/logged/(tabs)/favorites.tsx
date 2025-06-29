@@ -14,6 +14,9 @@ import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
+import { useAuth } from "@/context/auth.context";
+import { getFirstImageUri } from "@/utils/imageUtils";
+
 export interface User {
   favedRecipesIds: string[];
   _id: string;
@@ -104,12 +107,7 @@ export default function Favorites() {
           {recipes.map((recipe) => (
             <View key={recipe._id} style={styles.recipeItem}>
                 <Image
-                  source={{
-                    uri:
-                      recipe.principalPictures.length > 0
-                        ? recipe.principalPictures[0].url
-                        : "https://via.placeholder.com/120x120.png?text=Sin+imagen",
-                  }}
+                  source={getFirstImageUri(recipe.principalPictures)}
                   style={styles.recipeImage}
                   resizeMode="cover"
                 />

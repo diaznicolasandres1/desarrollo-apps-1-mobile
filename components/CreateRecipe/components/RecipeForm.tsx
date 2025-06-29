@@ -7,6 +7,7 @@ import { useCreateRecipeViewModel } from '@/viewmodels/CreateRecipeViewModel';
 import IngredientForm from './IngredientForm';
 import StepsForm from './StepsForm';
 import { recipeFormStyles } from '../styles/ComponentStyles';
+import { getImageUri } from "@/utils/imageUtils";
 
 interface RecipeFormProps {
   viewModel: ReturnType<typeof useCreateRecipeViewModel>;
@@ -58,7 +59,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
           <View style={recipeFormStyles.imagesSectionContainer}>
             {formData.principalPictures.map((picture, index) => (
               <View key={index} style={recipeFormStyles.imageItem}>
-                <Image source={{ uri: picture.url }} style={recipeFormStyles.recipeImage} />
+                <Image source={getImageUri(picture.url)} style={recipeFormStyles.recipeImage} />
                 <TouchableOpacity 
                   style={recipeFormStyles.removeImageButton}
                   onPress={() => removePrincipalPicture(index)}
