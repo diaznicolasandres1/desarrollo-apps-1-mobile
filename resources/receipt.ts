@@ -173,7 +173,6 @@ export const addToFavorites = async (
 
     if (response.status === 200 || response.status === 201) {
       const result = await response.json();
-      console.log("Receta agregada a favoritos:", result);
       return true;
     } else {
       console.error("Error al agregar a favoritos:", response.statusText);

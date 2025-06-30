@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { recipeService, RecipeDetail } from '../resources/RecipeService';
-import { getFirstImageUri } from '../utils/imageUtils';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
+import { RecipeDetail, recipeService } from "../resources/RecipeService";
+import { getFirstImageUri } from "../utils/imageUtils";
 
 interface FeaturedRecipe {
   id: string;
   title: string;
   img: string;
   description: string;
-  time: string;
+  duration: number | string;
+  difficulty: string;
 }
 
-const FEATURED_RECIPES_KEY = 'featured_recipes_cache';
+const FEATURED_RECIPES_KEY = "featured_recipes_cache";
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minutos en milisegundos
 
 export const useFeaturedRecipes = () => {
@@ -21,14 +22,15 @@ export const useFeaturedRecipes = () => {
 
   const transformRecipeData = (recipe: RecipeDetail): FeaturedRecipe => {
     const imageUri = getFirstImageUri(recipe.principalPictures);
-    
+
     return {
       id: recipe._id,
       title: recipe.name,
       img: imageUri.uri,
 
       description: recipe.description,
-      time: `${recipe.duration} min • ${recipe.difficulty}`
+      duration: recipe.duration,
+      difficulty: recipe.difficulty,
     };
   };
 
@@ -39,11 +41,11 @@ export const useFeaturedRecipes = () => {
 
       // 1. Intentar cargar desde AsyncStorage
       const cachedData = await AsyncStorage.getItem(FEATURED_RECIPES_KEY);
-      
+
       if (cachedData) {
         const { data, timestamp } = JSON.parse(cachedData);
         const isExpired = Date.now() - timestamp > CACHE_DURATION;
-        
+
         if (!isExpired) {
           setRecipes(data);
           setLoading(false);
@@ -58,15 +60,18 @@ export const useFeaturedRecipes = () => {
       // 3. Guardar en AsyncStorage
       const cacheData = {
         data: transformedRecipes,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      await AsyncStorage.setItem(FEATURED_RECIPES_KEY, JSON.stringify(cacheData));
+      await AsyncStorage.setItem(
+        FEATURED_RECIPES_KEY,
+        JSON.stringify(cacheData)
+      );
 
       setRecipes(transformedRecipes);
     } catch (err) {
-      console.error('Error loading featured recipes:', err);
-      setError('No se pudieron cargar las recetas destacadas');
-      
+      console.error("Error loading featured recipes:", err);
+      setError("No se pudieron cargar las recetas destacadas");
+
       // Si hay error del backend, intentar usar caché expirado como fallback
       try {
         const cachedData = await AsyncStorage.getItem(FEATURED_RECIPES_KEY);
@@ -75,7 +80,7 @@ export const useFeaturedRecipes = () => {
           setRecipes(data);
         }
       } catch (cacheError) {
-        console.error('Error loading cached data:', cacheError);
+        console.error("Error loading cached data:", cacheError);
       }
     } finally {
       setLoading(false);
@@ -94,6 +99,6 @@ export const useFeaturedRecipes = () => {
     recipes,
     loading,
     error,
-    refreshRecipes
+    refreshRecipes,
   };
-}; 
+};

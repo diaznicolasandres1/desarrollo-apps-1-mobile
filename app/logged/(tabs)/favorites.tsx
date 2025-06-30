@@ -1,158 +1,236 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
-import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import ScreenLayout from "@/components/ScreenLayout";
+import UniversalRecipeCard from "@/components/UniversalRecipeCard";
 import { Colors } from "@/constants/Colors";
-import { Ionicons } from "@expo/vector-icons";
-import { recipeService, RecipeDetail } from "../../../resources/RecipeService";
 import { useAuth } from "@/context/auth.context";
-import { getFirstImageUri } from "@/utils/imageUtils";
-
-export interface User {
-  favedRecipesIds: string[];
-  _id: string;
-  username: string;
-  password: string;
-  email: string;
-  status: string;
-  rol: string;
-  lastRecoveryCode: string;
-}
+import { useStorage } from "@/hooks/useLocalStorage";
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { RecipeDetail, getRecipeById } from "../../../resources/receipt";
 
 export default function Favorites() {
   const router = useRouter();
-
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-  const fetchFavoriteRecipes = async () => {
+  const { getItem, setItem } = useStorage();
+
+  const FAVORITES_STORAGE_KEY = useMemo(
+    () => `favorites_${user?._id || "guest"}`,
+    [user?._id]
+  );
+
+  const saveFavoritesToLocal = useCallback(
+    async (favoriteRecipes: RecipeDetail[]) => {
+      try {
+        await setItem(FAVORITES_STORAGE_KEY, favoriteRecipes);
+      } catch (error) {
+        console.error("❌ Error al guardar favoritos localmente:", error);
+      }
+    },
+    [setItem, FAVORITES_STORAGE_KEY]
+  );
+
+  // Cargar favoritos desde local storage
+  const loadFavoritesFromLocal = useCallback(async (): Promise<
+    RecipeDetail[]
+  > => {
     try {
-      const userJson = await AsyncStorage.getItem("user");
-      if (!userJson) {
-        setError("No se encontró un usuario autenticado.");
+      const savedFavorites = await getItem(FAVORITES_STORAGE_KEY, []);
+      return savedFavorites || [];
+    } catch (error) {
+      console.error("❌ Error al cargar favoritos desde local storage:", error);
+      return [];
+    }
+  }, [getItem, FAVORITES_STORAGE_KEY]);
+
+  const fetchFavoriteRecipes = useCallback(async () => {
+    if (!user) {
+      console.log("❌ No hay usuario logueado");
+      setLoading(false);
+      setError("Usuario no logueado");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Primero cargar favoritos desde el almacenamiento local
+      const localFavorites = await loadFavoritesFromLocal();
+      if (localFavorites.length > 0) {
+        setRecipes(localFavorites);
         setLoading(false);
-        return;
       }
 
-      const user: User = JSON.parse(userJson);
       const favIds = user.favedRecipesIds || [];
       if (favIds.length === 0) {
         setRecipes([]);
+        await saveFavoritesToLocal([]);
         setLoading(false);
         return;
       }
 
-      const promises = favIds.map((id) => recipeService.getRecipeById(id));
-      const favRecipes: RecipeDetail[] = await Promise.all(promises);
-      setRecipes(favRecipes);
+      const promises = favIds.map(async (id) => {
+        try {
+          const recipe = await getRecipeById(id);
+          return recipe;
+        } catch (error) {
+          console.error(`❌ Error al obtener receta ${id}:`, error);
+          return null;
+        }
+      });
+
+      const favRecipes = await Promise.all(promises);
+
+      // Filtrar recetas que no se pudieron cargar
+      const validRecipes = favRecipes.filter(
+        (recipe): recipe is RecipeDetail => recipe !== null
+      );
+
+      // Guardar en el almacenamiento local
+      await saveFavoritesToLocal(validRecipes);
+
+      // Actualizar el estado
+      setRecipes(validRecipes);
     } catch (err) {
-      console.error("Error al obtener recetas favoritas:", err);
-      setError("No se pudo cargar las recetas favoritas.");
+      console.error("� Error general:", err);
+      // En caso de error, intentar cargar desde almacenamiento local
+      const localFavorites = await loadFavoritesFromLocal();
+      if (localFavorites.length > 0) {
+        setRecipes(localFavorites);
+        setError("Mostrando favoritos guardados localmente (sin conexión)");
+      } else {
+        setError("No se pudo cargar las recetas favoritas.");
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, loadFavoritesFromLocal, saveFavoritesToLocal]);
 
-  fetchFavoriteRecipes();
-}, []);
+  const refreshFavorites = useCallback(() => {
+    fetchFavoriteRecipes();
+  }, [fetchFavoriteRecipes]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchFavoriteRecipes();
+    }, [fetchFavoriteRecipes])
+  );
+
+  const Layout = ({ children }: { children: React.ReactNode }) => (
+    <ScreenLayout
+      alternativeHeader={{
+        title: "Favoritos",
+        actions: (
+          <>
+            <TouchableOpacity onPress={refreshFavorites}>
+              <Ionicons
+                name="reload-outline"
+                size={24}
+                color={Colors.orange.orange900}
+              />
+            </TouchableOpacity>
+          </>
+        ),
+      }}
+    >
+      {children}
+    </ScreenLayout>
+  );
+
+  if (!user) {
+    return (
+      <Layout>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>
+            Debes iniciar sesión para ver tus favoritos.
+          </Text>
+        </View>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Favoritos" }}>
+      <Layout>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
+          <Text style={styles.loadingText}>Cargando favoritos...</Text>
         </View>
-      </ScreenLayout>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Favoritos" }}>
+      <Layout>
         <View style={styles.centered}>
           <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            onPress={fetchFavoriteRecipes}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
-      </ScreenLayout>
+      </Layout>
     );
   }
 
   if (recipes.length === 0) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Favoritos" }}>
+      <Layout>
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No tienes recetas favoritas.</Text>
+          <Ionicons
+            name="heart-outline"
+            size={64}
+            color={Colors.orange.orange300}
+          />
+          <Text style={styles.emptyText}>No tenés recetas favoritas.</Text>
+          <Text style={styles.emptySubText}>
+            ¡Explorá recetas y agregá tus favoritas!
+          </Text>
         </View>
-      </ScreenLayout>
+      </Layout>
     );
   }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: "Favoritos" }}>
+    <Layout>
       <ScrollView>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Estas son tus recetas favoritas</Text>
+          <Text style={styles.sectionTitle}>
+            Estas son tus recetas favoritas ({recipes.length})
+          </Text>
         </View>
+
         <View style={styles.recipesContainer}>
           {recipes.map((recipe) => (
-            <View key={recipe._id} style={styles.recipeItem}>
-                <Image
-                  source={getFirstImageUri(recipe.principalPictures)}
-                  style={styles.recipeImage}
-                  resizeMode="cover"
-                />
-              <View style={styles.recipeInfo}>
-                <Text style={styles.recipeTitle}>{recipe.name}</Text>
-                <Text
-                  style={styles.recipeDescription}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {recipe.description}
-                </Text>
-                <View style={styles.recipeInfoRow}>
-                  <View style={styles.recipeInfoRowItem}>
-                    <Ionicons
-                      name="time-outline"
-                      size={28}
-                      color={Colors.orange.orange900}
-                    />
-                    <Text style={styles.recipeMeta}>
-                      {recipe.duration} min –{" "}
-                      {recipe.difficulty.charAt(0).toUpperCase() +
-                        recipe.difficulty.slice(1)}
-                    </Text>
-                  </View>
-                  <View style={styles.recipeInfoRowItem}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        router.push(`/logged/receipt/${recipe._id}`);
-                      }}
-                    >
-                      <Ionicons
-                        name="arrow-forward"
-                        size={20}
-                        color={Colors.orange.orange900}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </View>
+            <UniversalRecipeCard
+              key={recipe._id}
+              id={recipe._id}
+              name={recipe.name}
+              description={recipe.description}
+              duration={recipe.duration}
+              difficulty={recipe.difficulty}
+              principalPictures={recipe.principalPictures}
+              variant="normal"
+            />
           ))}
         </View>
       </ScrollView>
-    </ScreenLayout>
+    </Layout>
   );
 }
 
@@ -162,15 +240,43 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: Colors.text,
   },
   errorText: {
     fontSize: 16,
     color: Colors.red.red600,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: Colors.orange.orange600,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     color: Colors.text,
     textAlign: "center",
+    marginTop: 16,
+    fontWeight: "600",
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: Colors.text,
+    textAlign: "center",
+    marginTop: 8,
+    opacity: 0.7,
   },
 
   sectionHeader: {
@@ -178,11 +284,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: Colors.orange.orange100,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
     color: Colors.orange.orange900,
   },
@@ -192,52 +298,33 @@ const styles = StyleSheet.create({
     width: "100%",
     padding: 16,
   },
-  recipeItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "white",
+
+  // Debug styles - temporal (se pueden eliminar después)
+  debugInfo: {
+    backgroundColor: "#f0f0f0",
+    margin: 10,
+    padding: 10,
+    borderRadius: 5,
+  },
+  debugTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  debugText: {
+    fontSize: 12,
+    marginBottom: 3,
+  },
+  debugButton: {
+    backgroundColor: Colors.orange.orange600,
     padding: 8,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 8,
-  },
-  recipeImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
-    marginRight: 12,
-  },
-  recipeInfo: {
-    flexShrink: 1,
-    flexGrow: 1,
-    flexDirection: "column",
-    gap: 4,
-    justifyContent: "space-between",
-  },
-  recipeTitle: {
-    fontSize: 20,
-    color: Colors.orange.orange700,
-  },
-  recipeDescription: {
-    fontSize: 14,
-    color: Colors.text,
-    flexShrink: 1,
-  },
-  recipeInfoRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 16
-  },
-  recipeInfoRowItem: {
-    flexDirection: "row",
-    gap: 8,
+    borderRadius: 5,
+    marginTop: 5,
     alignItems: "center",
-    justifyContent: "center",
   },
-  recipeMeta: {
-    fontSize: 14,
-    color: Colors.text,
+  debugButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });
