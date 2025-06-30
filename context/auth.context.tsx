@@ -26,6 +26,8 @@ interface AuthContextType {
   onRecoveryCode: (email: string) => Promise<boolean>;
   onNewPassword: (password: string) => Promise<boolean>;
   onValidateCode: (code: string) => boolean;
+  addToFavorites: (recipeId: string) => Promise<boolean>;
+  removeFromFavorites: (recipeId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -94,7 +96,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     }
     setIsLoading(false);
     setRecoveryData(null);
-
   };
 
   const logout = () => {
@@ -132,7 +133,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     const response = await changePassword(
       recoveryData.email,
       password,
-      recoveryData.recoveryCode,
+      recoveryData.recoveryCode
     );
     if (response.success) {
       Toast.show({
@@ -172,6 +173,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     return isCodeValid;
   };
 
+  const addToFavorites = async (recipeId: string) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        favedRecipesIds: [...(user.favedRecipesIds || []), recipeId],
+      };
+      setUser(updatedUser);
+      await setItem("user", updatedUser);
+      return true;
+    }
+    return false;
+  };
+
+  const removeFromFavorites = async (recipeId: string) => {
+    if (user) {
+      const updatedUser = {
+        ...user,
+        favedRecipesIds:
+          user.favedRecipesIds?.filter((id) => id !== recipeId) || [],
+      };
+      setUser(updatedUser);
+      await setItem("user", updatedUser);
+      return true;
+    }
+    return false;
+  };
+
   const prepare = async () => {
     const user = await getItem("user");
     if (user) {
@@ -201,6 +229,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         onNewPassword,
         onRecoveryCode,
         onValidateCode,
+        addToFavorites,
+        removeFromFavorites,
       }}
     >
       {isReady ? children : <SplashScreen />}

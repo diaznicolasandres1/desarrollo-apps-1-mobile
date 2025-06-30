@@ -11,7 +11,11 @@ interface FavoriteButtonProps {
 }
 
 const FavoriteButton = ({ id }: FavoriteButtonProps) => {
-  const { user } = useAuth();
+  const {
+    user,
+    addToFavorites: ctxAddToFavorites,
+    removeFromFavorites: ctxRemoveFromFavorites,
+  } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [localIsFavorite, setLocalIsFavorite] = useState(false);
 
@@ -38,7 +42,6 @@ const FavoriteButton = ({ id }: FavoriteButtonProps) => {
       let success = false;
 
       if (isFavorite) {
-        // Eliminar de favoritos
         success = await removeFromFavorites(user._id, id);
 
         if (success) {
@@ -48,6 +51,7 @@ const FavoriteButton = ({ id }: FavoriteButtonProps) => {
             text1: "Éxito",
             text2: "Receta eliminada de favoritos",
           });
+          ctxRemoveFromFavorites(id);
         } else {
           Toast.show({
             type: "error",
@@ -56,7 +60,6 @@ const FavoriteButton = ({ id }: FavoriteButtonProps) => {
           });
         }
       } else {
-        // Agregar a favoritos
         success = await addToFavorites(user._id, id);
 
         if (success) {
@@ -66,6 +69,7 @@ const FavoriteButton = ({ id }: FavoriteButtonProps) => {
             text1: "Éxito",
             text2: "Receta agregada a favoritos",
           });
+          ctxAddToFavorites(id);
         } else {
           Toast.show({
             type: "error",
