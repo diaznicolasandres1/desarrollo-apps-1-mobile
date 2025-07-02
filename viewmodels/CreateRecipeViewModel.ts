@@ -3,6 +3,7 @@ import { imageToBase64 } from "@/utils/imageUtils";
 import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
 import { useState } from "react";
+import { recipeService, RecipeDetail } from "@/resources/RecipeService";
 
 export interface Ingredient {
   name: string;
@@ -35,6 +36,14 @@ export interface RecipeFormData {
   servings: number;
 }
 
+// Nuevo tipo para manejar duplicados
+export interface DuplicateRecipeInfo {
+  exists: boolean;
+  serverRecipe?: RecipeDetail;
+  pendingRecipe?: CreateRecipeRequest;
+  pendingRecipeIndex?: number;
+}
+
 // Mock function para simular subida de imagen
 export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
@@ -56,7 +65,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
 
-  const { addReceiptToStorage } = useSync();
+  const { addReceiptToStorage, getReceiptsInStorage } = useSync();
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -97,6 +106,59 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       });
     }
   };
+
+  // Nueva función para verificar duplicados
+  const checkForDuplicateRecipe = async (recipeName: string): Promise<DuplicateRecipeInfo> => {
+    const trimmedName = recipeName.trim().toLowerCase();
+    
+    if (!trimmedName) {
+      return { exists: false };
+    }
+
+    try {
+      // Verificar en recetas del servidor
+      let serverRecipe: RecipeDetail | undefined;
+      if (user?._id && !isGuest) {
+        try {
+          const userRecipes = await recipeService.getUserRecipes(user._id);
+          serverRecipe = userRecipes.find(recipe => 
+            recipe.name.trim().toLowerCase() === trimmedName
+          );
+        } catch (error) {
+          console.log("No se pudieron obtener recetas del servidor:", error);
+        }
+      }
+
+      // Verificar en recetas pendientes del storage local
+      let pendingRecipe: CreateRecipeRequest | undefined;
+      let pendingRecipeIndex: number | undefined;
+      try {
+        const storedRecipes = await getReceiptsInStorage("createReceiptSync", []);
+        if (storedRecipes && storedRecipes.length > 0) {
+          pendingRecipeIndex = storedRecipes.findIndex(recipe => 
+            recipe.name.trim().toLowerCase() === trimmedName
+          );
+          if (pendingRecipeIndex !== -1) {
+            pendingRecipe = storedRecipes[pendingRecipeIndex];
+          }
+        }
+      } catch (error) {
+        console.log("No se pudieron obtener recetas del storage local:", error);
+      }
+
+      return {
+        exists: !!(serverRecipe || pendingRecipe),
+        serverRecipe,
+        pendingRecipe,
+        pendingRecipeIndex
+      };
+    } catch (error) {
+      console.error("Error verificando duplicados:", error);
+      return { exists: false };
+    }
+  };
+
+
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -295,6 +357,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       await addReceiptToStorage(recipeData);
       resetForm();
       onRecipeCreated?.();
+      
+      return { success: true, message: "Receta guardada exitosamente" };
     } catch (error) {
       console.error("Error al crear receta:", error);
 
@@ -362,5 +426,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     submitRecipe,
     resetForm,
     validateStep,
+    
+    // Nuevas funciones para duplicados
+    checkForDuplicateRecipe,
   };
 };

@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import ScreenLayout from '@/components/ScreenLayout';
-import { useCreateRecipeViewModel } from '@/viewmodels/CreateRecipeViewModel';
+import { useCreateRecipeViewModel, DuplicateRecipeInfo } from '@/viewmodels/CreateRecipeViewModel';
 import { StepOne, RecipeForm } from './components';
 
 export default function CreateRecipeScreen() {
@@ -15,7 +15,49 @@ export default function CreateRecipeScreen() {
   
   const viewModel = useCreateRecipeViewModel(handleRecipeCreated);
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    // Verificar duplicados antes de avanzar al siguiente paso
+    if (viewModel.currentStep === 1) {
+      if (!viewModel.formData.name.trim()) {
+        viewModel.updateFormData("name", viewModel.formData.name); // Trigger validation
+        return;
+      }
+
+      try {
+        const duplicateInfo: DuplicateRecipeInfo = await viewModel.checkForDuplicateRecipe(viewModel.formData.name);
+        
+        if (duplicateInfo.exists) {
+          // Mostrar alert con opciones
+          Alert.alert(
+            "Receta duplicada",
+            "Ya existe una receta con ese nombre.\n\n¿Qué desea hacer?",
+            [
+              {
+                text: "Cancelar",
+                style: "cancel"
+              },
+              {
+                text: "Editar",
+                onPress: () => {
+                  // TODO: Implementar lógica de editar
+                }
+              },
+              {
+                text: "Reemplazar",
+                onPress: () => {
+                  // TODO: Implementar lógica de reemplazar
+                }
+              }
+            ]
+          );
+          return;
+        }
+      } catch (error) {
+        console.error("Error verificando duplicados:", error);
+        // Si hay error en la verificación, continuar normalmente
+      }
+    }
+
     const success = viewModel.nextStep();
     if (!success && viewModel.currentStep === 2) {
       handleSubmit();
@@ -25,7 +67,7 @@ export default function CreateRecipeScreen() {
   const handleSubmit = async () => {
     const result = await viewModel.submitRecipe();
     
-    if (result.success) {
+    if (result && result.success) {
       Alert.alert(
         "¡Receta creada!",
         result.message || "Tu receta ha sido publicada exitosamente",
@@ -41,7 +83,7 @@ export default function CreateRecipeScreen() {
     } else {
       Alert.alert(
         "Error",
-        result.message || "Hubo un problema al crear la receta",
+        result?.message || "Hubo un problema al crear la receta",
         [{ text: "OK" }]
       );
     }
