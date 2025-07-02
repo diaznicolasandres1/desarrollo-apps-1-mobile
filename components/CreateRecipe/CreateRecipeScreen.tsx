@@ -25,8 +25,15 @@ export default function CreateRecipeScreen() {
         {
           text: "Editarla",
           onPress: () => {
-            // TODO: Navegar a editar la receta existente
-            console.log("Navegar a editar receta existente");
+            // Cargar la receta existente para edición
+            const loaded = viewModel.loadExistingRecipe(viewModel.formData.name);
+            if (loaded) {
+              console.log("Receta cargada exitosamente para edición");
+              // Avanzar al paso 2 para mostrar todos los campos cargados
+              viewModel.goToStep(2);
+            } else {
+              Alert.alert("Error", "No se pudo cargar la receta para edición");
+            }
           }
         },
         {

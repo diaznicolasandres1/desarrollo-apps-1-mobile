@@ -191,6 +191,12 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void, onDuplica
     }
   };
 
+  const goToStep = (step: number) => {
+    if (step >= 1 && step <= 2) {
+      setCurrentStep(step);
+    }
+  };
+
   // Ingredientes
   const addIngredient = (ingredient: Ingredient) => {
     setFormData((prev) => ({
@@ -364,6 +370,61 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void, onDuplica
     }
   };
 
+  const loadExistingRecipe = (recipeName: string) => {
+    // Buscar la receta existente por nombre
+    const existingRecipe = [...userRecipes, ...pendingRecipes].find(recipe => 
+      recipe.name.toLowerCase() === recipeName.toLowerCase()
+    );
+
+    if (existingRecipe) {
+      // Mapear dificultad del backend al formato del frontend
+      const mapDifficultyToFrontend = (difficulty: string) => {
+        switch (difficulty.toLowerCase()) {
+          case "fácil":
+          case "facil":
+            return "facil";
+          case "medio":
+          case "media":
+            return "media";
+          case "difícil":
+          case "dificil":
+            return "dificil";
+          default:
+            return "media";
+        }
+      };
+
+      // Precargar todos los datos de la receta existente
+      setFormData({
+        name: existingRecipe.name,
+        description: existingRecipe.description || "",
+        ingredients: existingRecipe.ingredients || [],
+        steps: existingRecipe.steps || [],
+        principalPictures: existingRecipe.principalPictures || [],
+        userId: getUserId(),
+        category: existingRecipe.category || [],
+        duration: existingRecipe.duration || 0,
+        difficulty: mapDifficultyToFrontend(existingRecipe.difficulty || ""),
+        servings: existingRecipe.servings || 0,
+      });
+
+      // Actualizar el contador de pasos si hay pasos existentes
+      if (existingRecipe.steps && existingRecipe.steps.length > 0) {
+        const maxStepId = Math.max(...existingRecipe.steps.map(step => parseInt(step.id) || 0));
+        setStepIdCounter(maxStepId + 1);
+      }
+
+      // Limpiar errores
+      setErrors({});
+      
+      console.log("Receta cargada para edición:", existingRecipe.name);
+      return true;
+    }
+
+    console.error("No se encontró la receta para editar:", recipeName);
+    return false;
+  };
+
   const resetForm = () => {
     setFormData({
       name: "",
@@ -393,6 +454,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void, onDuplica
     updateFormData,
     nextStep,
     previousStep,
+    goToStep,
     addIngredient,
     removeIngredient,
     updateIngredient,
@@ -407,5 +469,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void, onDuplica
     resetForm,
     validateStep,
     checkDuplicateRecipeName,
+    loadExistingRecipe,
   };
 };
