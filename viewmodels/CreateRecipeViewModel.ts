@@ -51,7 +51,7 @@ export const mockImageUpload = async (): Promise<string> => {
   return mockImages[Math.floor(Math.random() * mockImages.length)];
 };
 
-export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
+export const useCreateRecipeViewModel = (onRecipeCreated?: () => void, onDuplicateRecipe?: () => void) => {
   const { user, isGuest } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
@@ -140,7 +140,13 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         } else if (formData.name.length > 50) {
           newErrors.name = "El nombre no puede superar los 50 caracteres";
         } else if (!isGuest && checkDuplicateRecipeName(formData.name)) {
-          newErrors.name = "Ya tienes una receta con este nombre";
+          // En lugar de mostrar error, ejecutar callback para mostrar modal
+          if (onDuplicateRecipe) {
+            onDuplicateRecipe();
+            return false; // Retornar false para que no avance de paso
+          } else {
+            newErrors.name = "Ya tienes una receta con este nombre";
+          }
         }
         break;
       case 2:
@@ -400,5 +406,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     submitRecipe,
     resetForm,
     validateStep,
+    checkDuplicateRecipeName,
   };
 };

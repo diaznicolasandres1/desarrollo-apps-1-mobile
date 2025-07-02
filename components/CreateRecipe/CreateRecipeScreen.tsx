@@ -13,7 +13,35 @@ export default function CreateRecipeScreen() {
     router.push('/logged/(tabs)/my-recipes');
   };
   
-  const viewModel = useCreateRecipeViewModel(handleRecipeCreated);
+  const showDuplicateRecipeModal = () => {
+    Alert.alert(
+      "La receta ya existe",
+      "Ya tienes una receta con este nombre. ¿Qué deseas hacer?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Editarla",
+          onPress: () => {
+            // TODO: Navegar a editar la receta existente
+            console.log("Navegar a editar receta existente");
+          }
+        },
+        {
+          text: "Reemplazarla", 
+          onPress: () => {
+            // TODO: Reemplazar la receta existente
+            console.log("Reemplazar receta existente");
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const viewModel = useCreateRecipeViewModel(handleRecipeCreated, showDuplicateRecipeModal);
 
   const handleNext = () => {
     const success = viewModel.nextStep();
