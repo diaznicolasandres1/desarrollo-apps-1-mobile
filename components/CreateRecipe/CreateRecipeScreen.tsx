@@ -39,7 +39,8 @@ export default function CreateRecipeScreen() {
               {
                 text: "Editar",
                 onPress: () => {
-                  // TODO: Implementar lógica de editar
+                  // Cargar receta para edición
+                  viewModel.loadRecipeForEditing(duplicateInfo);
                 }
               },
               {
@@ -91,7 +92,7 @@ export default function CreateRecipeScreen() {
 
   if (viewModel.currentStep === 1) {
     return (
-      <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
+      <ScreenLayout alternativeHeader={{ title: viewModel.editMode.isEditing ? "Editar receta" : "Crear receta" }}>
         <StepOne
           recipeName={viewModel.formData.name}
           setRecipeName={(name) => viewModel.updateFormData("name", name)}
@@ -103,7 +104,7 @@ export default function CreateRecipeScreen() {
   }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
+    <ScreenLayout alternativeHeader={{ title: viewModel.editMode.isEditing ? "Editar receta" : "Crear receta" }}>
       <RecipeForm 
         viewModel={viewModel}
         onSubmit={handleSubmit}

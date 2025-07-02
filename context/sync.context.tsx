@@ -1,6 +1,7 @@
 import { useStorage } from "@/hooks/useLocalStorage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { createRecipe, CreateRecipeRequest } from "@/resources/receipt";
+import { recipeService } from "@/resources/RecipeService";
 import React, {
   createContext,
   ReactNode,
@@ -17,6 +18,8 @@ interface SyncContextProps {
     key: string,
     defaultValue?: CreateRecipeRequest[] | undefined
   ) => Promise<CreateRecipeRequest[] | null>;
+  removeReceiptFromStorage: (recipeName: string) => Promise<void>;
+  updateReceiptInStorage: (recipeName: string, updatedRecipe: CreateRecipeRequest) => Promise<void>;
 }
 
 export const SyncContext = createContext<SyncContextProps | undefined>(
@@ -58,19 +61,45 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
           let updatedReceipts = [...receipts];
           for (const receipt of receipts) {
             try {
-              const isCreated = await createRecipe(receipt);
-              if (isCreated) {
+              let isProcessed = false;
+              
+              if (receipt.isUpdate && receipt.originalRecipeId) {
+                // Es una actualización de receta existente
+                console.log(`Sincronizando actualización de receta: ${receipt.name}`);
+                isProcessed = await recipeService.updateRecipe(
+                  receipt.originalRecipeId, 
+                  receipt
+                );
+                
+                if (isProcessed) {
+                  Toast.show({
+                    type: "success",
+                    text1: "Receta actualizada",
+                    text2: `"${receipt.name}" ha sido actualizada exitosamente.`,
+                  });
+                }
+              } else {
+                // Es una nueva receta
+                console.log(`Sincronizando nueva receta: ${receipt.name}`);
+                isProcessed = await createRecipe(receipt);
+                
+                if (isProcessed) {
+                  Toast.show({
+                    type: "success",
+                    text1: "Receta creada",
+                    text2: `"${receipt.name}" ha sido creada exitosamente.`,
+                  });
+                }
+              }
+
+              // Si se procesó exitosamente, remover de la lista pendiente
+              if (isProcessed) {
                 updatedReceipts = updatedReceipts.filter(
                   (r) => r.name !== receipt.name
                 );
-                Toast.show({
-                  type: "success",
-                  text1: "Se ha creado la receta",
-                  text2: `"${receipt.name}" ha sido creada exitosamente.`,
-                });
               }
             } catch (error) {
-              console.error("Error creating recipe:", error);
+              console.error("Error processing recipe:", error);
             }
           }
           await setReceiptsInStorage("createReceiptSync", updatedReceipts);
@@ -94,6 +123,22 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       value={{
         addReceiptToStorage,
         getReceiptsInStorage,
+        removeReceiptFromStorage: async (recipeName: string) => {
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            const updatedReceipts = receipts.filter((r) => r.name !== recipeName);
+            await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          }
+        },
+        updateReceiptInStorage: async (recipeName: string, updatedRecipe: CreateRecipeRequest) => {
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            const updatedReceipts = receipts.map((r) =>
+              r.name === recipeName ? updatedRecipe : r
+            );
+            await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          }
+        },
       }}
     >
       {children}

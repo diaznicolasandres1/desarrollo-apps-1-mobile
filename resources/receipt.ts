@@ -12,6 +12,8 @@ export interface CreateRecipeRequest {
   difficulty: "Fácil" | "Medio" | "Difícil";
   servings: number;
   status: string;
+  isUpdate?: boolean;
+  originalRecipeId?: string;
 }
 
 export interface CreateRecipeResponse {

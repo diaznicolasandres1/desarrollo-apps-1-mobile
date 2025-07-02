@@ -44,6 +44,14 @@ export interface DuplicateRecipeInfo {
   pendingRecipeIndex?: number;
 }
 
+// Nuevo tipo para el modo de edición
+export interface EditMode {
+  isEditing: boolean;
+  editingType: 'pending' | 'server' | 'none';
+  originalName?: string;
+  recipeId?: string;
+}
+
 // Mock function para simular subida de imagen
 export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
@@ -65,7 +73,20 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [stepIdCounter, setStepIdCounter] = useState(1);
 
-  const { addReceiptToStorage, getReceiptsInStorage } = useSync();
+  const { 
+    addReceiptToStorage, 
+    getReceiptsInStorage,
+    removeReceiptFromStorage,
+    updateReceiptInStorage
+  } = useSync();
+
+  // Estado para modo edición
+  const [editMode, setEditMode] = useState<EditMode>({
+    isEditing: false,
+    editingType: 'none',
+    originalName: undefined,
+    recipeId: undefined,
+  });
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -158,7 +179,93 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     }
   };
 
+  // Nueva función para cargar receta existente en modo edición
+  const loadRecipeForEditing = (duplicateInfo: DuplicateRecipeInfo) => {
+    try {
+      if (duplicateInfo.pendingRecipe) {
+        // Editar receta pendiente
+        const pending = duplicateInfo.pendingRecipe;
+        
+        // Mapear dificultad de vuelta al formato del form
+        const mapDifficultyBack = (difficulty: string) => {
+          switch (difficulty) {
+            case "Fácil":
+              return "facil";
+            case "Medio":
+              return "media";
+            case "Difícil":
+              return "dificil";
+            default:
+              return "media";
+          }
+        };
 
+        setFormData({
+          name: pending.name,
+          description: pending.description,
+          ingredients: pending.ingredients,
+          steps: pending.steps,
+          principalPictures: pending.principalPictures,
+          userId: pending.userId,
+          category: pending.category,
+          duration: pending.duration,
+          difficulty: mapDifficultyBack(pending.difficulty),
+          servings: pending.servings,
+        });
+
+        setEditMode({
+          isEditing: true,
+          editingType: 'pending',
+          originalName: pending.name,
+          recipeId: undefined,
+        });
+
+      } else if (duplicateInfo.serverRecipe) {
+        // Editar receta del servidor
+        const server = duplicateInfo.serverRecipe;
+        
+        // Mapear dificultad de vuelta al formato del form
+        const mapDifficultyBack = (difficulty: string) => {
+          switch (difficulty) {
+            case "Fácil":
+              return "facil";
+            case "Medio":
+              return "media";
+            case "Difícil":
+              return "dificil";
+            default:
+              return "media";
+          }
+        };
+
+        setFormData({
+          name: server.name,
+          description: server.description,
+          ingredients: server.ingredients,
+          steps: server.steps,
+          principalPictures: server.principalPictures,
+          userId: server.userId,
+          category: server.category,
+          duration: server.duration,
+          difficulty: mapDifficultyBack(server.difficulty),
+          servings: server.servings,
+        });
+
+        setEditMode({
+          isEditing: true,
+          editingType: 'server',
+          originalName: server.name,
+          recipeId: server._id,
+        });
+      }
+
+      // Avanzar al paso 2 automáticamente
+      setCurrentStep(2);
+
+    } catch (error) {
+      console.error("Error cargando receta para edición:", error);
+    }
+  };
 
   const validateStep = (step: number): boolean => {
     const newErrors: Record<string, string> = {};
@@ -324,7 +431,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       }
 
       // Mapear dificultad al formato esperado por el backend
-      const mapDifficulty = (difficulty: string) => {
+      const mapDifficulty = (difficulty: string): "Fácil" | "Medio" | "Difícil" => {
         switch (difficulty) {
           case "facil":
             return "Fácil";
@@ -337,8 +444,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         }
       };
 
-      // Preparar datos para el backend
-      const recipeData: CreateRecipeRequest = {
+      // Preparar datos base para el backend
+      const baseRecipeData = {
         name: formData.name,
         description: formData.description,
         ingredients: formData.ingredients,
@@ -349,20 +456,66 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         duration: formData.duration,
         difficulty: mapDifficulty(formData.difficulty),
         servings: formData.servings,
-        status: "creating",
       };
 
-      console.log("Enviando receta al backend...");
+      // Manejar según modo de edición
+      if (editMode.isEditing) {
+        if (editMode.editingType === 'pending') {
+          // Editar receta pendiente en storage
+          const recipeData: CreateRecipeRequest = {
+            ...baseRecipeData,
+            status: "creating",
+          };
 
-      await addReceiptToStorage(recipeData);
-      resetForm();
-      onRecipeCreated?.();
-      
-      return { success: true, message: "Receta guardada exitosamente" };
+          await updateReceiptInStorage(editMode.originalName!, recipeData);
+          
+          resetForm();
+          onRecipeCreated?.();
+          
+          return { 
+            success: true, 
+            message: "Receta actualizada exitosamente" 
+          };
+
+        } else if (editMode.editingType === 'server') {
+          // Editar receta del servidor - guardar como pendiente con flag de update
+          const recipeData: CreateRecipeRequest = {
+            ...baseRecipeData,
+            status: "creating",
+            isUpdate: true,
+            originalRecipeId: editMode.recipeId,
+          };
+
+          await addReceiptToStorage(recipeData);
+          
+          resetForm();
+          onRecipeCreated?.();
+          
+          return { 
+            success: true, 
+            message: "Receta actualizada exitosamente" 
+          };
+        }
+      } else {
+        // Crear nueva receta (modo normal)
+        const recipeData: CreateRecipeRequest = {
+          ...baseRecipeData,
+          status: "creating",
+        };
+
+        console.log("Enviando receta al backend...");
+
+        await addReceiptToStorage(recipeData);
+        resetForm();
+        onRecipeCreated?.();
+        
+        return { success: true, message: "Receta guardada exitosamente" };
+      }
+
     } catch (error) {
-      console.error("Error al crear receta:", error);
+      console.error("Error al procesar receta:", error);
 
-      let errorMessage = "Error al crear la receta";
+      let errorMessage = "Error al procesar la receta";
 
       if (error instanceof Error) {
         if (error.message.includes("HTTP 400")) {
@@ -400,6 +553,13 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     setCurrentStep(1);
     setStepIdCounter(1);
     setErrors({});
+    // Reset del modo edición
+    setEditMode({
+      isEditing: false,
+      editingType: 'none',
+      originalName: undefined,
+      recipeId: undefined,
+    });
   };
 
   return {
@@ -408,6 +568,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     formData,
     isLoading,
     errors,
+    editMode,
 
     // Actions
     updateFormData,
@@ -427,7 +588,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     resetForm,
     validateStep,
     
-    // Nuevas funciones para duplicados
+    // Nuevas funciones para duplicados y edición
     checkForDuplicateRecipe,
+    loadRecipeForEditing,
   };
 };

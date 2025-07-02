@@ -12,6 +12,8 @@ export interface CreateRecipeRequest {
   duration: number;
   difficulty: "Fácil" | "Medio" | "Difícil";
   servings: number;
+  isUpdate?: boolean;
+  originalRecipeId?: string;
 }
 
 export interface CreateRecipeResponse {
@@ -163,6 +165,7 @@ class RecipeService {
           "Content-Type": "application/json",
         },
       });
+
       if (response.ok) {
         const result: RecipeDetail[] = await response.json();
         return result;
@@ -195,6 +198,44 @@ class RecipeService {
     } catch (error) {
       console.error('Error obteniendo recetas destacadas:', error);
       throw error;
+    }
+  }
+
+  async updateRecipe(
+    recipeId: string,
+    recipeData: CreateRecipeRequest
+  ): Promise<boolean> {
+    try {
+      console.log("=== ACTUALIZANDO RECETA ===");
+      console.log("URL:", `${this.baseUrl}/recipes/${recipeId}`);
+      console.log("Método:", "PUT");
+      console.log("Recipe ID:", recipeId);
+      console.log("Request Body:", JSON.stringify(recipeData, null, 2));
+      console.log("==========================");
+
+      const response = await fetch(`${this.baseUrl}/recipes/${recipeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(recipeData),
+      });
+
+      console.log("Update response status:", response.status);
+      console.log("Update response ok:", response.ok);
+
+      if (response.status === 200 || response.status === 201) {
+        const result = await response.json();
+        console.log("Update response exitosa:", result);
+        return true;
+      } else {
+        const errorData = await response.text();
+        console.error("Error updating recipe:", errorData);
+        return false;
+      }
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      return false;
     }
   }
 }
