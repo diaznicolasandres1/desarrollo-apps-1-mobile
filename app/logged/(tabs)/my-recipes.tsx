@@ -55,7 +55,15 @@ export default function MyRecipes() {
                     storedRecipe.isUpdate && 
                     storedRecipe.originalRecipeId === serverRecipe._id
                   );
-                  return !hasEditedVersion;
+                  
+                  // Si hay una receta en storage con isReplacement=true y recipeToReplaceId igual a esta receta del servidor,
+                  // no mostrar la del servidor porque ha sido reemplazada offline
+                  const hasReplacementVersion = allUserRecipes.pendingRecipes.some(storedRecipe => 
+                    storedRecipe.isReplacement && 
+                    storedRecipe.recipeToReplaceId === serverRecipe._id
+                  );
+                  
+                  return !hasEditedVersion && !hasReplacementVersion;
                 })
                 .map((recipe) => (
                   <UniversalRecipeCard
