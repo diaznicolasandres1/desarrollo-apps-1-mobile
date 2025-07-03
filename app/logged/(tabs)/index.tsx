@@ -70,7 +70,6 @@ export default function HomeScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
-          <Text style={styles.loadingText}>Cargando recetas destacadas...</Text>
         </View>
       );
     }
@@ -224,7 +223,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 40,

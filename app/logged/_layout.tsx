@@ -29,12 +29,6 @@ const Layout = () => {
           headerShown: false,
         }}
       />
-      <Stack.Screen
-        name="search-result"
-        options={{
-          headerShown: false,
-        }}
-      />
     </Stack>
   );
 };
