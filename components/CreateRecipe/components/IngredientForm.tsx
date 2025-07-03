@@ -1,5 +1,6 @@
 import { PrimaryButton } from "@/components/Button";
 import { Colors } from "@/constants/Colors";
+import { ingredientOptions, measureTypes } from "@/constants/config";
 import { Ingredient } from "@/viewmodels/CreateRecipeViewModel";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
@@ -29,17 +30,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
     [key: string]: boolean;
   }>({});
 
-  const availableIngredients = ["Tomate", "Cebolla", "Ajo", "Fideos"];
-
-  const measureTypes = [
-    "gr",
-    "cucharadas",
-    "kg",
-    "ml",
-    "tazas",
-    "unidad",
-    "pizca",
-  ];
+  const availableIngredients = ingredientOptions;
 
   const toggleDropdown = (key: string) => {
     setShowDropdowns((prev) => ({
@@ -125,11 +116,15 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
             </TouchableOpacity>
 
             {showDropdowns[`ingredient-${index}`] && (
-              <View style={ingredientFormStyles.dropdownList}>
+              <View style={ingredientFormStyles.ingredientDropdownList}>
                 <ScrollView
                   style={ingredientFormStyles.dropdownScroll}
                   nestedScrollEnabled={true}
                   showsVerticalScrollIndicator={true}
+                  keyboardShouldPersistTaps="handled"
+                  scrollEventThrottle={16}
+                  bounces={false}
+                  overScrollMode="never"
                 >
                   {availableIngredients.map((item) => (
                     <TouchableOpacity
@@ -138,6 +133,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
                       onPress={() =>
                         selectOption(`ingredient-${index}`, item, index, "name")
                       }
+                      activeOpacity={0.7}
                     >
                       <Text style={ingredientFormStyles.dropdownItemText}>
                         {item}
@@ -173,19 +169,28 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
 
             {showDropdowns[`unit-${index}`] && (
               <View style={ingredientFormStyles.dropdownList}>
-                {measureTypes.map((unit) => (
-                  <TouchableOpacity
-                    key={unit}
-                    style={ingredientFormStyles.dropdownItem}
-                    onPress={() =>
-                      selectOption(`unit-${index}`, unit, index, "measureType")
-                    }
-                  >
-                    <Text style={ingredientFormStyles.dropdownItemText}>
-                      {unit}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView
+                  style={ingredientFormStyles.dropdownScroll}
+                  nestedScrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                  keyboardShouldPersistTaps="handled"
+                  scrollEventThrottle={16}
+                >
+                  {measureTypes.map((unit) => (
+                    <TouchableOpacity
+                      key={unit}
+                      style={ingredientFormStyles.dropdownItem}
+                      onPress={() =>
+                        selectOption(`unit-${index}`, unit, index, "measureType")
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text style={ingredientFormStyles.dropdownItemText}>
+                        {unit}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </View>

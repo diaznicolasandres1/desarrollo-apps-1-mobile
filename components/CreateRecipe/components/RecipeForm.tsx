@@ -1,5 +1,6 @@
 import { PrimaryButton } from "@/components/Button";
 import { Colors } from "@/constants/Colors";
+import { categories, difficulties } from "@/constants/config";
 import { getImageUri } from "@/utils/imageUtils";
 import { useCreateRecipeViewModel } from "@/viewmodels/CreateRecipeViewModel";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,12 +38,6 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
     removeCategory,
     isLoading,
   } = viewModel;
-
-  const difficulties = [
-    { key: "facil", label: "Fácil" },
-    { key: "media", label: "Medio" },
-    { key: "dificil", label: "Difícil" },
-  ];
 
   return (
     <>
@@ -204,19 +199,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
           <Text style={recipeFormStyles.sectionTitle}>Categorías</Text>
 
           <View style={recipeFormStyles.categoriesGrid}>
-            {[
-              "Vegetariano",
-              "Postres",
-              "Sopa",
-              "Desayuno",
-              "Pastas",
-              "Carnes y Aves",
-              "Pescados y mariscos",
-              "Ensaladas",
-              "Salsas",
-              "Guarniciones",
-              "Legumbres y guisos",
-            ].map((category) => (
+            {categories.map((category) => (
               <TouchableOpacity
                 key={category}
                 style={[
