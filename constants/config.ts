@@ -34,3 +34,19 @@ export const categories = [
   "Guarniciones",
   "Legumbres y guisos",
 ];
+
+export const measureTypes = [
+  "gr",
+  "cucharadas",
+  "kg",
+  "ml",
+  "tazas",
+  "unidad",
+  "pizca",
+];
+
+export const difficulties = [
+  { key: "facil", label: "Fácil" },
+  { key: "media", label: "Medio" },
+  { key: "dificil", label: "Difícil" },
+];
