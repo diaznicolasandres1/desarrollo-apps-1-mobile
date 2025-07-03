@@ -187,7 +187,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                     },
                   ]}
                 >
-                  {diff.label}
+                {diff.label}
                 </Text>
               </TouchableOpacity>
             ))}
