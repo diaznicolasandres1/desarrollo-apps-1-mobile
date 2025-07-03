@@ -50,6 +50,7 @@ export interface EditMode {
   editingType: 'pending' | 'server' | 'none';
   originalName?: string;
   recipeId?: string;
+  originalStatus?: string;
 }
 
 // Mock function para simular subida de imagen
@@ -70,23 +71,7 @@ export const mockImageUpload = async (): Promise<string> => {
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const { user, isGuest } = useAuth();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [stepIdCounter, setStepIdCounter] = useState(1);
-
-  const { 
-    addReceiptToStorage, 
-    getReceiptsInStorage,
-    removeReceiptFromStorage,
-    updateReceiptInStorage
-  } = useSync();
-
-  // Estado para modo edición
-  const [editMode, setEditMode] = useState<EditMode>({
-    isEditing: false,
-    editingType: 'none',
-    originalName: undefined,
-    recipeId: undefined,
-  });
+  const { addReceiptToStorage, updateReceiptInStorage, getReceiptsInStorage, allUserRecipes, refreshUserRecipes } = useSync();
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -96,6 +81,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     return user?._id || "anonymous_user";
   };
 
+  // Estado del formulario
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [formData, setFormData] = useState<RecipeFormData>({
     name: "",
     description: "",
@@ -108,27 +95,46 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     difficulty: "",
     servings: 0,
   });
-
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [stepIdCounter, setStepIdCounter] = useState<number>(1);
+
+  // Estado para modo edición
+  const [editMode, setEditMode] = useState<EditMode>({
+    isEditing: false,
+    editingType: 'none',
+    originalName: undefined,
+    recipeId: undefined,
+    originalStatus: undefined,
+  });
+
+  // Estado para tracking de datos precargados
+  const [recipesPreloaded, setRecipesPreloaded] = useState(false);
 
   const updateFormData = (field: keyof RecipeFormData, value: any) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
-
-    // Limpiar error del campo si existe
+    
+    // Limpiar error del campo al editarlo
     if (errors[field]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+      setErrors((prev) => ({
+        ...prev,
+        [field]: "",
+      }));
     }
   };
 
-  // Nueva función para verificar duplicados
+  // Función para precargar recetas - ahora usa el estado unificado
+  const preloadUserRecipes = async () => {
+    if (!recipesPreloaded) {
+      await refreshUserRecipes();
+      setRecipesPreloaded(true);
+    }
+  };
+
+  // Nueva función para verificar duplicados usando SOLO datos precargados (offline-first)
   const checkForDuplicateRecipe = async (recipeName: string): Promise<DuplicateRecipeInfo> => {
     const trimmedName = recipeName.trim().toLowerCase();
     
@@ -136,45 +142,40 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       return { exists: false };
     }
 
-    try {
-      // Verificar en recetas del servidor
-      let serverRecipe: RecipeDetail | undefined;
-      if (user?._id && !isGuest) {
-        try {
-          const userRecipes = await recipeService.getUserRecipes(user._id);
-          serverRecipe = userRecipes.find(recipe => 
-            recipe.name.trim().toLowerCase() === trimmedName
-          );
-        } catch (error) {
-          console.log("No se pudieron obtener recetas del servidor:", error);
-        }
+    // Si las recetas aún no están precargadas, intentar precargarlas (sin bloquear si falla)
+    if (!recipesPreloaded) {
+      try {
+        await preloadUserRecipes();
+      } catch (error) {
+        // Si falla el preload, continuamos con lo que tengamos
       }
+    }
 
-      // Verificar en recetas pendientes del storage local
+    try {
+      // Verificar en storage local (recetas pendientes)
       let pendingRecipe: CreateRecipeRequest | undefined;
       let pendingRecipeIndex: number | undefined;
-      try {
-        const storedRecipes = await getReceiptsInStorage("createReceiptSync", []);
-        if (storedRecipes && storedRecipes.length > 0) {
-          pendingRecipeIndex = storedRecipes.findIndex(recipe => 
-            recipe.name.trim().toLowerCase() === trimmedName
-          );
-          if (pendingRecipeIndex !== -1) {
-            pendingRecipe = storedRecipes[pendingRecipeIndex];
-          }
-        }
-      } catch (error) {
-        console.log("No se pudieron obtener recetas del storage local:", error);
+      
+      pendingRecipeIndex = allUserRecipes.pendingRecipes.findIndex(recipe => 
+        recipe.name.trim().toLowerCase() === trimmedName
+      );
+      if (pendingRecipeIndex !== -1) {
+        pendingRecipe = allUserRecipes.pendingRecipes[pendingRecipeIndex];
       }
 
+      // Verificar en recetas del servidor desde el estado compartido
+      let serverRecipe: RecipeDetail | undefined;
+      serverRecipe = allUserRecipes.serverRecipes.find(recipe => 
+        recipe.name.trim().toLowerCase() === trimmedName
+      );
+      
       return {
-        exists: !!(serverRecipe || pendingRecipe),
+        exists: !!(pendingRecipe || serverRecipe),
         serverRecipe,
         pendingRecipe,
-        pendingRecipeIndex
+        pendingRecipeIndex: pendingRecipeIndex !== -1 ? pendingRecipeIndex : undefined
       };
     } catch (error) {
-      console.error("Error verificando duplicados:", error);
       return { exists: false };
     }
   };
@@ -182,8 +183,10 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   // Nueva función para cargar receta existente en modo edición
   const loadRecipeForEditing = (duplicateInfo: DuplicateRecipeInfo) => {
     try {
+      // PRIORIDAD CORRECTA: Storage local siempre tiene precedencia
+      // porque contiene la versión más reciente (editada offline o pendiente de sync)
       if (duplicateInfo.pendingRecipe) {
-        // Editar receta pendiente
+        // Editar receta pendiente usando datos precargados
         const pending = duplicateInfo.pendingRecipe;
         
         // Mapear dificultad de vuelta al formato del form
@@ -217,11 +220,12 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           isEditing: true,
           editingType: 'pending',
           originalName: pending.name,
-          recipeId: undefined,
+          recipeId: pending.isUpdate ? pending.originalRecipeId : undefined,
+          originalStatus: pending.status,
         });
 
       } else if (duplicateInfo.serverRecipe) {
-        // Editar receta del servidor
+        // Solo usar receta del servidor si NO hay versión en storage local
         const server = duplicateInfo.serverRecipe;
         
         // Mapear dificultad de vuelta al formato del form
@@ -256,6 +260,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           editingType: 'server',
           originalName: server.name,
           recipeId: server._id,
+          originalStatus: server.status,
         });
       }
 
@@ -461,10 +466,10 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       // Manejar según modo de edición
       if (editMode.isEditing) {
         if (editMode.editingType === 'pending') {
-          // Editar receta pendiente en storage
+          // Editar receta pendiente en storage - mantener status original
           const recipeData: CreateRecipeRequest = {
             ...baseRecipeData,
-            status: "creating",
+            status: editMode.originalStatus || "creating", // Usar status original guardado
           };
 
           await updateReceiptInStorage(editMode.originalName!, recipeData);
@@ -478,10 +483,10 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           };
 
         } else if (editMode.editingType === 'server') {
-          // Editar receta del servidor - guardar como pendiente con flag de update
+          // Editar receta del servidor - mantener status original
           const recipeData: CreateRecipeRequest = {
             ...baseRecipeData,
-            status: "creating",
+            status: editMode.originalStatus || "creating", // Usar status original guardado
             isUpdate: true,
             originalRecipeId: editMode.recipeId,
           };
@@ -503,9 +508,8 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           status: "creating",
         };
 
-        console.log("Enviando receta al backend...");
-
         await addReceiptToStorage(recipeData);
+        
         resetForm();
         onRecipeCreated?.();
         
@@ -559,6 +563,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       editingType: 'none',
       originalName: undefined,
       recipeId: undefined,
+      originalStatus: undefined,
     });
   };
 
@@ -569,6 +574,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     isLoading,
     errors,
     editMode,
+    recipesPreloaded,
 
     // Actions
     updateFormData,
@@ -591,5 +597,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     // Nuevas funciones para duplicados y edición
     checkForDuplicateRecipe,
     loadRecipeForEditing,
+    preloadUserRecipes,
   };
 };

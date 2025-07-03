@@ -6,7 +6,7 @@ import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,57 +14,19 @@ import {
   Text,
   View,
 } from "react-native";
-import { RecipeDetail, recipeService } from "../../../resources/RecipeService";
 
 export default function MyRecipes() {
   const router = useRouter();
   const { user } = useAuth();
-  const { getReceiptsInStorage } = useSync();
-  const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [storedRecipes, setStoredRecipes] = useState<CreateRecipeRequest[]>([]);
-
-  const loadRecipesFromStorage = useCallback(async () => {
-    try {
-      const storedRecipes = await getReceiptsInStorage("createReceiptSync", []);
-      if (storedRecipes && storedRecipes.length > 0) {
-        setStoredRecipes(storedRecipes);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  }, [getReceiptsInStorage]);
-
-  const fetchUserRecipes = useCallback(async () => {
-    try {
-      if (!user?._id) {
-        setLoading(false);
-        return;
-      }
-      const list = await recipeService.getUserRecipes(user._id);
-      setRecipes(list);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?._id]);
-
-  const syncReceipts = useCallback(async () => {
-    try {
-      loadRecipesFromStorage();
-      fetchUserRecipes();
-    } catch (error) {
-      console.error("Error syncing receipts:", error);
-    }
-  }, []);
+  const { allUserRecipes, refreshUserRecipes } = useSync();
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
-      syncReceipts();
-    }, [syncReceipts])
+      refreshUserRecipes();
+    }, [refreshUserRecipes])
   );
 
-  if (loading) {
+  if (allUserRecipes.isLoading) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Mis recetas" }}>
         <View style={styles.centered}>
@@ -81,20 +43,33 @@ export default function MyRecipes() {
           <Text style={styles.sectionTitle}>Tus creaciones:</Text>
         </View>
         <View style={styles.recipesContainer}>
-          {recipes.length > 0 ? (
+          {allUserRecipes.serverRecipes.length > 0 || allUserRecipes.pendingRecipes.length > 0 ? (
             <>
-              {recipes.map((recipe) => (
-                <UniversalRecipeCard
-                  key={recipe._id}
-                  id={recipe._id}
-                  name={recipe.name}
-                  description={recipe.description}
-                  principalPictures={recipe.principalPictures}
-                  status={recipe.status}
-                  variant="my-recipe"
-                />
-              ))}
-              {storedRecipes.map((recipe, index) => (
+              {/* Filtrar recetas del servidor que tienen versión editada en storage local */}
+              {allUserRecipes.serverRecipes
+                .filter(serverRecipe => {
+                  // Si hay una receta en storage con isUpdate=true y originalRecipeId igual a esta receta del servidor,
+                  // no mostrar la del servidor porque hay una versión editada offline
+                  const hasEditedVersion = allUserRecipes.pendingRecipes.some(storedRecipe => 
+                    storedRecipe.isUpdate && 
+                    storedRecipe.originalRecipeId === serverRecipe._id
+                  );
+                  return !hasEditedVersion;
+                })
+                .map((recipe) => (
+                  <UniversalRecipeCard
+                    key={recipe._id}
+                    id={recipe._id}
+                    name={recipe.name}
+                    description={recipe.description}
+                    principalPictures={recipe.principalPictures}
+                    status={recipe.status}
+                    variant="my-recipe"
+                  />
+                ))}
+              
+              {/* Mostrar todas las recetas del storage local (nuevas y editadas) */}
+              {allUserRecipes.pendingRecipes.map((recipe, index) => (
                 <UniversalRecipeCard
                   key={`stored-${index}`}
                   name={recipe.name}

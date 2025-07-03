@@ -1,19 +1,29 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import ScreenLayout from '@/components/ScreenLayout';
 import { useCreateRecipeViewModel, DuplicateRecipeInfo } from '@/viewmodels/CreateRecipeViewModel';
 import { StepOne, RecipeForm } from './components';
+import { useSync } from '@/context/sync.context';
 
 export default function CreateRecipeScreen() {
   const router = useRouter();
+  const { refreshUserRecipes } = useSync();
   
-  // Función de callback para navegar cuando se cree exitosamente la receta
-  const handleRecipeCreated = () => {
+  // Función de callback para actualizar datos y navegar cuando se edite exitosamente
+  const handleRecipeCreated = async () => {
+    // Forzar refresh de datos en lugar de solo navegar
+    await refreshUserRecipes();
     router.push('/logged/(tabs)/my-recipes');
   };
   
   const viewModel = useCreateRecipeViewModel(handleRecipeCreated);
+
+  // Precargar recetas al montar el componente
+  useEffect(() => {
+    viewModel.preloadUserRecipes();
+  }, []);
 
   const handleNext = async () => {
     // Verificar duplicados antes de avanzar al siguiente paso

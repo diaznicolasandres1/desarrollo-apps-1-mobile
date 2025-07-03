@@ -174,8 +174,12 @@ class RecipeService {
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      console.error('Error fetching user recipes:', error);
-      throw error;
+      // Solo mostrar error si no es un error de red típico (offline)
+      if (error instanceof Error && error.message.includes('Network request failed')) {
+        console.log('🔌 Sin conexión - trabajando offline');
+      } else {
+        console.error('Error fetching user recipes:', error);
+      }      throw error;
     }
   }
 
