@@ -3,9 +3,12 @@ import UniversalRecipeCard from "@/components/UniversalRecipeCard";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
-import { CreateRecipeRequest } from "@/resources/receipt";
+import {
+  CreateRecipeRequest,
+  getUserRecipes,
+  RecipeDetail,
+} from "@/resources/receipt";
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,10 +17,8 @@ import {
   Text,
   View,
 } from "react-native";
-import { RecipeDetail, recipeService } from "../../../resources/RecipeService";
 
 export default function MyRecipes() {
-  const router = useRouter();
   const { user } = useAuth();
   const { getReceiptsInStorage } = useSync();
   const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
@@ -38,28 +39,24 @@ export default function MyRecipes() {
   const fetchUserRecipes = useCallback(async () => {
     try {
       if (!user?._id) {
-        setLoading(false);
         return;
       }
-      const list = await recipeService.getUserRecipes(user._id);
+      const list = await getUserRecipes(user._id);
       setRecipes(list);
+    } catch (error) {
+      console.error("Error fetching user recipes:", error);
     } finally {
       setLoading(false);
     }
   }, [user?._id]);
 
   const syncReceipts = useCallback(async () => {
-    try {
-      loadRecipesFromStorage();
-      fetchUserRecipes();
-    } catch (error) {
-      console.error("Error syncing receipts:", error);
-    }
-  }, []);
+    loadRecipesFromStorage();
+    fetchUserRecipes();
+  }, [loadRecipesFromStorage, fetchUserRecipes]);
 
   useFocusEffect(
     useCallback(() => {
-      setLoading(true);
       syncReceipts();
     }, [syncReceipts])
   );

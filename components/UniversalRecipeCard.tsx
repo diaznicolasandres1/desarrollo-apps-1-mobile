@@ -15,7 +15,8 @@ interface UniversalRecipeCardProps {
   difficulty?: string;
   status?: string;
   onPress?: () => void;
-  variant?: "normal" | "my-recipe";
+  variant?: "normal" | "my-recipe" | "search";
+  creatorName?: string;
 }
 
 const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
@@ -28,6 +29,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
   status,
   onPress,
   variant = "normal",
+  creatorName,
 }) => {
   const router = useRouter();
 
@@ -46,6 +48,9 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
 
   // Configuración de tamaños de imagen
   const getImageDimensions = () => {
+    if (variant === "search") {
+      return { width: 100, height: 120 };
+    }
     if (variant === "my-recipe") {
       return { width: 120, height: 120 };
     }
@@ -112,6 +117,17 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
   };
 
   const chipStyles = getChipStyles(status);
+
+  const renderCreatorInfo = () => {
+    if (!creatorName) return null;
+
+    return (
+      <View style={styles.recipeInfoRowItem}>
+        <Ionicons name="person-outline" size={16} color={Colors.gray.gray600} />
+        <Text style={styles.creatorText}>Por {creatorName}</Text>
+      </View>
+    );
+  };
 
   const renderTimeInfo = () => {
     if (!config.showTimeInfo) return null;
@@ -208,6 +224,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
             {renderArrow()}
           </View>
         )}
+        {renderCreatorInfo()}
       </View>
     </CardContainer>
   );
@@ -216,7 +233,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
 const styles = StyleSheet.create({
   defaultContainer: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     backgroundColor: "white",
     borderRadius: 12,
     gap: 8,
@@ -257,6 +274,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   recipeInfoRowItem: {
+    marginTop: 4,
     flexDirection: "row",
     gap: 4,
     alignItems: "center",
@@ -300,6 +318,12 @@ const styles = StyleSheet.create({
   },
   chipTextPending: {
     color: Colors.gray.gray600,
+  },
+  creatorText: {
+    fontSize: 12,
+    color: Colors.gray.gray600,
+    marginLeft: 4,
+    fontFamily: "RobotoMedium",
   },
 });
 
