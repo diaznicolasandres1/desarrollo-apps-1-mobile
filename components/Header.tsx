@@ -32,16 +32,26 @@ const Header = () => {
 export const AlternativeHeader = ({
   title = "Recetas",
   actions = null,
+  onBackPress,
 }: {
   title?: string;
   actions?: React.ReactNode;
+  onBackPress?: () => void;
 }) => {
   const router = useRouter();
+
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <View style={styles.headerContainer}>
       <View style={styles.headerIcons}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity onPress={handleBackPress}>
           <Ionicons name="arrow-back-outline" size={25} />
         </TouchableOpacity>
         <View style={styles.iconGroup}>{actions}</View>
