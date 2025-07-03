@@ -173,7 +173,13 @@ const ReceiptPage = () => {
                 <Ionicons name="add-circle-outline" size={25} />
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={() => {}}>
+              <TouchableOpacity onPress={() => {
+                // Navegar a crear receta pasando el nombre para que use la lógica de duplicados
+                router.push({
+                  pathname: "/logged/create",
+                  params: { editRecipeName: receipt.name }
+                });
+              }}>
                 <Ionicons name="pencil-outline" size={25} />
               </TouchableOpacity>
             )}

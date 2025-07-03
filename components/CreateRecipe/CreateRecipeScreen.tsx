@@ -4,14 +4,18 @@ import {
   DuplicateRecipeInfo,
   useCreateRecipeViewModel,
 } from "@/viewmodels/CreateRecipeViewModel";
-import { useRouter } from "expo-router";
+import { Colors } from "@/constants/Colors";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useEffect } from "react";
-import { Alert } from "react-native";
+import { Alert, View, ActivityIndicator, Text } from "react-native";
 import { RecipeForm, StepOne } from "./components";
 
 export default function CreateRecipeScreen() {
   const router = useRouter();
+  const { editRecipeName } = useLocalSearchParams<{ editRecipeName?: string }>();
   const { refreshUserRecipes } = useSync();
+  const [isInitializing, setIsInitializing] = React.useState(!!editRecipeName);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Función de callback para actualizar datos y navegar cuando se edite exitosamente
   const handleRecipeCreated = async () => {
@@ -22,10 +26,46 @@ export default function CreateRecipeScreen() {
 
   const viewModel = useCreateRecipeViewModel(handleRecipeCreated);
 
-  // Precargar recetas al montar el componente
+  // Precargar recetas y cargar para edición si viene un nombre
   useEffect(() => {
-    viewModel.preloadUserRecipes();
-  }, []);
+    const initializeComponent = async () => {
+      try {
+        // Siempre precargar recetas primero
+        await viewModel.preloadUserRecipes();
+        
+        // Si viene un nombre de receta para editar, usar exactamente la misma lógica del modal
+        if (editRecipeName) {
+          const duplicateInfo: DuplicateRecipeInfo = 
+            await viewModel.checkForDuplicateRecipe(editRecipeName);
+          
+          if (duplicateInfo.exists) {
+            // Usar exactamente la misma función que usa el botón "Editar" del modal
+            viewModel.loadRecipeForEditing(duplicateInfo);
+          } else {
+            Alert.alert(
+              "Error",
+              "No se pudo encontrar la receta para editar",
+              [{ text: "OK", onPress: () => router.back() }]
+            );
+          }
+        }
+      } catch (error) {
+        console.error("Error loading recipe for editing:", error);
+        if (editRecipeName) {
+          Alert.alert(
+            "Error",
+            "Hubo un problema al cargar la receta",
+            [{ text: "OK", onPress: () => router.back() }]
+          );
+        }
+      } finally {
+        // Marcar que terminó la inicialización
+        setIsInitializing(false);
+      }
+    };
+
+    initializeComponent();
+  }, [editRecipeName]);
 
   const handleNext = async () => {
     // Verificar duplicados antes de avanzar al siguiente paso
@@ -80,27 +120,46 @@ export default function CreateRecipeScreen() {
   };
 
   const handleSubmit = async () => {
-    const result = await viewModel.submitRecipe();
+    setIsSubmitting(true);
+    
+    try {
+      const result = await viewModel.submitRecipe();
 
-    if (result && result.success) {
-      Alert.alert(
-        "¡Receta creada!",
-        result.message || "Tu receta ha sido publicada exitosamente",
-        [
-          {
-            text: "Ver mis recetas",
-            onPress: () => {
-              // La navegación ya se maneja en el callback del ViewModel
+      if (result && result.success) {
+        // Si viene del lápiz (editRecipeName), navegar directamente sin Alert
+        if (editRecipeName) {
+          // La navegación ya se maneja en el callback del ViewModel
+          return;
+        }
+        
+        // Si viene del modal o creación normal, mostrar Alert
+        Alert.alert(
+          "¡Receta creada!",
+          result.message || "Tu receta ha sido publicada exitosamente",
+          [
+            {
+              text: "Ver mis recetas",
+              onPress: () => {
+                router.push("/logged/(tabs)/my-recipes");
+              },
             },
-          },
-        ]
-      );
-    } else {
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          result?.message || "Hubo un problema al crear la receta",
+          [{ text: "OK" }]
+        );
+        setIsSubmitting(false);
+      }
+    } catch (error) {
       Alert.alert(
         "Error",
-        result?.message || "Hubo un problema al crear la receta",
+        "Hubo un problema al crear la receta",
         [{ text: "OK" }]
       );
+      setIsSubmitting(false);
     }
   };
 
@@ -113,6 +172,52 @@ export default function CreateRecipeScreen() {
       viewModel.previousStep();
     }
   };
+
+  // Mostrar loading mientras se inicializa
+  if (isInitializing) {
+    return (
+      <ScreenLayout alternativeHeader={{ title: "Cargando..." }}>
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: 20
+        }}>
+          <ActivityIndicator size="large" color={Colors.orange.orange900} />
+          <Text style={{ 
+            marginTop: 16, 
+            fontSize: 16, 
+            color: Colors.text 
+          }}>
+            Cargando receta...
+          </Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  // Mostrar loading mientras se guarda
+  if (isSubmitting) {
+    return (
+      <ScreenLayout alternativeHeader={{ title: "Guardando..." }}>
+        <View style={{ 
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          padding: 20
+        }}>
+          <ActivityIndicator size="large" color={Colors.orange.orange900} />
+          <Text style={{ 
+            marginTop: 16, 
+            fontSize: 16, 
+            color: Colors.text 
+          }}>
+            Guardando receta...
+          </Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
 
   if (viewModel.currentStep === 1) {
     // Determinar el título según el modo
