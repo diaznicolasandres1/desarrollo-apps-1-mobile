@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Recetas",
-    "slug": "Recetas",
+    "slug": "recetas",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon_1024.png",
@@ -9,15 +9,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gruposiete.recetas"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/icon_1024.png",
-        "backgroundColor": "#FFF3E0"
+        "foregroundImage": "./assets/images/icon_1024.png"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.recetas"
+      "package": "com.gruposiete.recetas"
     },
     "web": {
       "bundler": "metro",
@@ -34,7 +34,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFF3E0"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

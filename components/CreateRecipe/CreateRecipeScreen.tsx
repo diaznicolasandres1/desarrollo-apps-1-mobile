@@ -1,25 +1,30 @@
 import ScreenLayout from "@/components/ScreenLayout";
+import { Colors } from "@/constants/Colors";
 import { useSync } from "@/context/sync.context";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import {
   DuplicateRecipeInfo,
   useCreateRecipeViewModel,
 } from "@/viewmodels/CreateRecipeViewModel";
-import { Colors } from "@/constants/Colors";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect } from "react";
-import { Alert, View, ActivityIndicator, Text } from "react-native";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { RecipeForm, StepOne } from "./components";
 
 export default function CreateRecipeScreen() {
   const router = useRouter();
-  const { editRecipeName } = useLocalSearchParams<{ editRecipeName?: string }>();
+  const { editRecipeName } = useLocalSearchParams<{
+    editRecipeName?: string;
+  }>();
   const { refreshUserRecipes } = useSync();
   const [isInitializing, setIsInitializing] = React.useState(!!editRecipeName);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { isConnected } = useNetworkStatus();
 
   // Función de callback para actualizar datos y navegar cuando se edite exitosamente
   const handleRecipeCreated = async () => {
     // Forzar refresh de datos en lugar de solo navegar
+    setIsSubmitting(false);
     await refreshUserRecipes();
     router.push("/logged/(tabs)/my-recipes");
   };
@@ -32,31 +37,27 @@ export default function CreateRecipeScreen() {
       try {
         // Siempre precargar recetas primero
         await viewModel.preloadUserRecipes();
-        
+
         // Si viene un nombre de receta para editar, usar exactamente la misma lógica del modal
         if (editRecipeName) {
-          const duplicateInfo: DuplicateRecipeInfo = 
+          const duplicateInfo: DuplicateRecipeInfo =
             await viewModel.checkForDuplicateRecipe(editRecipeName);
-          
+
           if (duplicateInfo.exists) {
             // Usar exactamente la misma función que usa el botón "Editar" del modal
             viewModel.loadRecipeForEditing(duplicateInfo);
           } else {
-            Alert.alert(
-              "Error",
-              "No se pudo encontrar la receta para editar",
-              [{ text: "OK", onPress: () => router.back() }]
-            );
+            Alert.alert("Error", "No se pudo encontrar la receta para editar", [
+              { text: "OK", onPress: () => router.back() },
+            ]);
           }
         }
       } catch (error) {
         console.error("Error loading recipe for editing:", error);
         if (editRecipeName) {
-          Alert.alert(
-            "Error",
-            "Hubo un problema al cargar la receta",
-            [{ text: "OK", onPress: () => router.back() }]
-          );
+          Alert.alert("Error", "Hubo un problema al cargar la receta", [
+            { text: "OK", onPress: () => router.back() },
+          ]);
         }
       } finally {
         // Marcar que terminó la inicialización
@@ -121,7 +122,7 @@ export default function CreateRecipeScreen() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
+
     try {
       const result = await viewModel.submitRecipe();
 
@@ -131,20 +132,28 @@ export default function CreateRecipeScreen() {
           // La navegación ya se maneja en el callback del ViewModel
           return;
         }
-        
-        // Si viene del modal o creación normal, mostrar Alert
-        Alert.alert(
-          "¡Receta creada!",
-          result.message || "Tu receta ha sido publicada exitosamente",
-          [
-            {
-              text: "Ver mis recetas",
-              onPress: () => {
-                router.push("/logged/(tabs)/my-recipes");
+
+        if (!isConnected) {
+          Alert.alert(
+            "No tenés conexión",
+            "Pero no te preocupes, la receta se guardará en tu dispositivo y se sincronizará cuando vuelvas a estar conectado.",
+            [{ text: "OK" }]
+          );
+          return;
+        } else {
+          Alert.alert(
+            "¡Listo!",
+            result.message || "Tu receta ha sido publicada exitosamente",
+            [
+              {
+                text: "Ver mis recetas",
+                onPress: () => {
+                  router.push("/logged/(tabs)/my-recipes");
+                },
               },
-            },
-          ]
-        );
+            ]
+          );
+        }
       } else {
         Alert.alert(
           "Error",
@@ -154,11 +163,9 @@ export default function CreateRecipeScreen() {
         setIsSubmitting(false);
       }
     } catch (error) {
-      Alert.alert(
-        "Error",
-        "Hubo un problema al crear la receta",
-        [{ text: "OK" }]
-      );
+      Alert.alert("Error", "Hubo un problema al crear la receta", [
+        { text: "OK" },
+      ]);
       setIsSubmitting(false);
     }
   };
@@ -177,18 +184,22 @@ export default function CreateRecipeScreen() {
   if (isInitializing) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Cargando..." }}>
-        <View style={{ 
-          flex: 1, 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          padding: 20
-        }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
-          <Text style={{ 
-            marginTop: 16, 
-            fontSize: 16, 
-            color: Colors.text 
-          }}>
+          <Text
+            style={{
+              marginTop: 16,
+              fontSize: 16,
+              color: Colors.text,
+            }}
+          >
             Cargando receta...
           </Text>
         </View>
@@ -200,18 +211,22 @@ export default function CreateRecipeScreen() {
   if (isSubmitting) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Guardando..." }}>
-        <View style={{ 
-          flex: 1, 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          padding: 20
-        }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
-          <Text style={{ 
-            marginTop: 16, 
-            fontSize: 16, 
-            color: Colors.text 
-          }}>
+          <Text
+            style={{
+              marginTop: 16,
+              fontSize: 16,
+              color: Colors.text,
+            }}
+          >
             Guardando receta...
           </Text>
         </View>

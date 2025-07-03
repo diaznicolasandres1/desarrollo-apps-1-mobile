@@ -162,7 +162,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
     if (!config.showArrow) return null;
 
     // No mostrar flecha si está pendiente de aprobación
-    if (status === "pending_to_approve") return null;
+    if (status !== "approved") return null;
 
     const iconName = "arrow-forward";
 

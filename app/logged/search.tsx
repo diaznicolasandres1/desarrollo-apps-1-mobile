@@ -34,7 +34,28 @@ type SearchForm = {
   user: string;
 };
 
-const users = ["Tomás Schuster", "Juan Perez", "Maria Gonzalez"];
+const users = [
+  {
+    name: "Tomás Schuster",
+    id: "67d8c7370424733f9bddc252",
+  },
+  {
+    name: "Gonzalo Salvia",
+    id: "685dd2d3837c18bb4d890a2a",
+  },
+  {
+    name: "Nicolás Díaz",
+    id: "67d8bdda53ae721daa7b0552",
+  },
+  {
+    name: "Ana Pérez",
+    id: "abcdef1234567890abcdef12",
+  },
+  {
+    name: "Juan García",
+    id: "fedcba0987654321fedcba09",
+  },
+];
 const CACHE_EXPIRATION_MS = 1 * 60 * 1000; // 1 minuto
 
 const getUserNameById = async (
@@ -197,7 +218,7 @@ const Search = () => {
         includeIngredients: data.includeIngredients,
         excludeIngredients: data.excludeIngredients,
         category: data.category,
-        userId: data.user, // Aquí deberías convertir el nombre a ID si es necesario
+        userId: users.find((u) => u.name === data.user)?.id || "",
         onlyApproved: true,
       });
 
@@ -278,7 +299,7 @@ const Search = () => {
 
             <MultiSelectChips
               label="Usuario"
-              options={users}
+              options={Object.values(users).map((user) => user.name)}
               selected={user ? [user] : []}
               onChange={(value) => setValue("user", value[0])}
               onlyOne={true}

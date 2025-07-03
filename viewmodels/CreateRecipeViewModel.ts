@@ -1,8 +1,7 @@
 import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { CreateRecipeRequest } from "@/resources/receipt";
-import { RecipeDetail } from "@/resources/RecipeService";
+import { CreateRecipeRequest, RecipeDetail } from "@/resources/receipt";
 import { useState } from "react";
 import { Image } from "react-native";
 
@@ -74,6 +73,7 @@ export const mockImageUpload = async (): Promise<string> => {
 };
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
+  const { isConnected } = useNetworkStatus();
   const { user, isGuest } = useAuth();
   const {
     addReceiptToStorage,
@@ -83,7 +83,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     refreshUserRecipes,
     replaceRecipeInStorage,
   } = useSync();
-  const { isConnected } = useNetworkStatus();
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -585,10 +584,18 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           resetForm();
           onRecipeCreated?.();
 
-          return {
-            success: true,
-            message: "Receta programada para reemplazo",
-          };
+          if (!isConnected) {
+            return {
+              success: true,
+              message:
+                "No tenés conexión, pero la receta será reemplazada cuando vuelvas a estar en línea.",
+            };
+          } else {
+            return {
+              success: true,
+              message: "La receta será reemplazada.",
+            };
+          }
         } else {
           // **REEMPLAZO OFFLINE**: Usar función específica de reemplazo
           const recipeData: CreateRecipeRequest = {

@@ -71,8 +71,8 @@ const CommentForm = ({ recipeId, onCommentAdded }: CommentFormProps) => {
       if (success) {
         Toast.show({
           type: "success",
-          text1: "Éxito",
-          text2: "Tu comentario ha sido enviado correctamente",
+          text1: "!Listo¡",
+          text2: "Tu comentario ha sido enviado.",
         });
 
         // Limpiar formulario y llamar callback
