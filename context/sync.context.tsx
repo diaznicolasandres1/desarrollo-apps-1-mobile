@@ -22,6 +22,7 @@ interface SyncContextProps {
   ) => Promise<CreateRecipeRequest[] | null>;
   removeReceiptFromStorage: (recipeName: string) => Promise<void>;
   updateReceiptInStorage: (recipeName: string, updatedRecipe: CreateRecipeRequest) => Promise<void>;
+  replaceRecipeInStorage: (recipeToReplaceId: string, newRecipe: CreateRecipeRequest) => Promise<void>;
   
   // Single Source of Truth: Estado unificado que combina servidor + storage
   allUserRecipes: {
@@ -138,8 +139,37 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
               console.log(`🔄 Procesando receta: "${receipt.name}"`);
               console.log(`   - isUpdate: ${receipt.isUpdate}`);
               console.log(`   - originalRecipeId: ${receipt.originalRecipeId}`);
+              console.log(`   - isReplacement: ${receipt.isReplacement}`);
+              console.log(`   - recipeToReplaceId: ${receipt.recipeToReplaceId}`);
               
-              if (receipt.isUpdate && receipt.originalRecipeId) {
+              if (receipt.isReplacement && receipt.recipeToReplaceId) {
+                // Es un reemplazo - eliminar la anterior y crear la nueva
+                console.log(`🔄 Sincronizando reemplazo de receta: ${receipt.name}`);
+                
+                // Paso 1: Eliminar receta anterior
+                const deleteSuccess = await recipeService.deleteRecipe(receipt.recipeToReplaceId);
+                
+                if (deleteSuccess) {
+                  console.log(`🗑️ DELETE exitoso para receta original`);
+                } else {
+                  console.log(`ℹ️ DELETE falló (posiblemente 404 - receta ya eliminada)`);
+                }
+                
+                // Paso 2: Crear nueva receta (intentar siempre, independiente del DELETE)
+                const createSuccess = await createRecipe(receipt);
+                
+                if (createSuccess) {
+                  console.log(`✅ CREATE exitoso para receta de reemplazo: ${receipt.name}`);
+                  isProcessed = true;
+                  Toast.show({
+                    type: "success",
+                    text1: "Receta reemplazada", 
+                    text2: `"${receipt.name}" ha sido creada exitosamente.`,
+                  });
+                } else {
+                  console.error(`❌ Error creando receta de reemplazo: ${receipt.name}`);
+                }
+              } else if (receipt.isUpdate && receipt.originalRecipeId) {
                 // Es una actualización de receta existente
                 console.log(`✏️ Sincronizando actualización de receta: ${receipt.name}`);
                 isProcessed = await recipeService.updateRecipe(
@@ -222,6 +252,37 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
               r.name === recipeName ? updatedRecipe : r
             );
             await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          }
+          // Auto-refresh para mantener estado sincronizado
+          await refreshUserRecipes();
+        },
+        replaceRecipeInStorage: async (recipeToReplaceId: string, newRecipe: CreateRecipeRequest) => {
+          console.log("=== REPLACE RECIPE IN STORAGE ===");
+          console.log("Recipe to replace ID:", recipeToReplaceId);
+          console.log("New recipe:", newRecipe.name);
+          
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            // Buscar receta existente en storage local por originalRecipeId
+            const existingIndex = receipts.findIndex((r) => 
+              r.originalRecipeId === recipeToReplaceId || 
+              r.name === recipeToReplaceId // fallback por si no tiene originalRecipeId
+            );
+            
+            if (existingIndex !== -1) {
+              // Reemplazar receta existente en storage local
+              console.log("🔄 Reemplazando receta existente en storage local");
+              const updatedReceipts = [...receipts];
+              updatedReceipts[existingIndex] = newRecipe;
+              await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+            } else {
+              // Agregar nueva receta con flag de reemplazo
+              console.log("➕ Agregando nueva receta con flag de reemplazo");
+              newRecipe.isReplacement = true;
+              newRecipe.recipeToReplaceId = recipeToReplaceId;
+              const updatedReceipts = [...receipts, newRecipe];
+              await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+            }
           }
           // Auto-refresh para mantener estado sincronizado
           await refreshUserRecipes();

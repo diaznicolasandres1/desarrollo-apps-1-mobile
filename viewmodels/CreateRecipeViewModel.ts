@@ -4,6 +4,7 @@ import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
 import { useState } from "react";
 import { recipeService, RecipeDetail } from "@/resources/RecipeService";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 export interface Ingredient {
   name: string;
@@ -71,7 +72,8 @@ export const mockImageUpload = async (): Promise<string> => {
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const { user, isGuest } = useAuth();
-  const { addReceiptToStorage, updateReceiptInStorage, getReceiptsInStorage, allUserRecipes, refreshUserRecipes } = useSync();
+  const { addReceiptToStorage, updateReceiptInStorage, getReceiptsInStorage, allUserRecipes, refreshUserRecipes, replaceRecipeInStorage } = useSync();
+  const { isConnected } = useNetworkStatus();
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
   const getUserId = () => {
@@ -183,10 +185,11 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   // Nueva función para cargar receta existente en modo edición
   const loadRecipeForEditing = (duplicateInfo: DuplicateRecipeInfo) => {
     try {
-      // PRIORIDAD CORRECTA: Storage local siempre tiene precedencia
-      // porque contiene la versión más reciente (editada offline o pendiente de sync)
+      console.log("=== LOADING RECIPE FOR EDITING ===");
+      console.log("Duplicate info:", duplicateInfo);
+      
+      // Storage local SIEMPRE tiene prioridad (contiene la verdad)
       if (duplicateInfo.pendingRecipe) {
-        // Editar receta pendiente usando datos precargados
         const pending = duplicateInfo.pendingRecipe;
         
         // Mapear dificultad de vuelta al formato del form
@@ -269,6 +272,53 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
     } catch (error) {
       console.error("Error cargando receta para edición:", error);
+    }
+  };
+
+  const replaceRecipe = async (duplicateInfo: DuplicateRecipeInfo) => {
+    try {
+      console.log("=== REPLACE RECIPE ===");
+      console.log("Duplicate info:", duplicateInfo);
+      console.log("Is connected:", isConnected);
+      
+      // Mantener el nombre actual, limpiar solo el resto de campos
+      setFormData(prev => ({
+        name: prev.name, // ¡MANTENER EL NOMBRE!
+        description: "",
+        ingredients: [],
+        steps: [],
+        principalPictures: [],
+        userId: getUserId(),
+        category: [],
+        duration: 0,
+        difficulty: "",
+        servings: 0,
+      }));
+      
+      // Configurar modo reemplazo sin resetear completamente
+      if (duplicateInfo.pendingRecipe) {
+        setEditMode({
+          isEditing: false, // Formulario para nueva receta 
+          editingType: 'none',
+          originalName: duplicateInfo.pendingRecipe.name,
+          recipeId: duplicateInfo.pendingRecipe.originalRecipeId || duplicateInfo.pendingRecipe.name,
+          originalStatus: duplicateInfo.pendingRecipe.status,
+        });
+      } else if (duplicateInfo.serverRecipe) {
+        setEditMode({
+          isEditing: false, // Formulario para nueva receta
+          editingType: 'none',
+          originalName: duplicateInfo.serverRecipe.name,
+          recipeId: duplicateInfo.serverRecipe._id,
+          originalStatus: duplicateInfo.serverRecipe.status,
+        });
+      }
+      
+      // Ir directamente al paso 2 - formulario completo con nombre preservado
+      setCurrentStep(2);
+      
+    } catch (error) {
+      console.error("Error configurando reemplazo de receta:", error);
     }
   };
 
@@ -501,6 +551,49 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
             message: "Receta actualizada exitosamente" 
           };
         }
+      } else if (editMode.originalName && editMode.recipeId) {
+        // MODO REEMPLAZO: Formulario en blanco pero tiene originalName y recipeId configurados
+        console.log("=== SUBMIT RECIPE - MODO REEMPLAZO ===");
+        console.log("Original name:", editMode.originalName);
+        console.log("Recipe ID:", editMode.recipeId);
+        console.log("Is connected:", isConnected);
+        
+        if (isConnected) {
+          // **REEMPLAZO ONLINE**: Eliminar anterior + crear nueva
+          const recipeData: CreateRecipeRequest = {
+            ...baseRecipeData,
+            status: "creating",
+            isReplacement: true,
+            recipeToReplaceId: editMode.recipeId,
+          };
+
+          await addReceiptToStorage(recipeData);
+          
+          resetForm();
+          onRecipeCreated?.();
+          
+          return { 
+            success: true, 
+            message: "Receta programada para reemplazo" 
+          };
+          
+        } else {
+          // **REEMPLAZO OFFLINE**: Usar función específica de reemplazo
+          const recipeData: CreateRecipeRequest = {
+            ...baseRecipeData,
+            status: editMode.originalStatus || "creating",
+          };
+
+          await replaceRecipeInStorage(editMode.recipeId, recipeData);
+          
+          resetForm();
+          onRecipeCreated?.();
+          
+          return { 
+            success: true, 
+            message: "Receta reemplazada exitosamente" 
+          };
+        }
       } else {
         // Crear nueva receta (modo normal)
         const recipeData: CreateRecipeRequest = {
@@ -598,5 +691,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     checkForDuplicateRecipe,
     loadRecipeForEditing,
     preloadUserRecipes,
+    replaceRecipe,
   };
 };

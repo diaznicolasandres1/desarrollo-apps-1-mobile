@@ -14,6 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MyRecipes() {
   const router = useRouter();

@@ -263,6 +263,39 @@ class RecipeService {
       throw error;
     }
   }
+
+  // Método para eliminar una receta
+  async deleteRecipe(recipeId: string): Promise<boolean> {
+    try {
+      console.log("=== ELIMINANDO RECETA ===");
+      console.log("Recipe ID:", recipeId);
+      
+      const url = `${BASE_URL}/recipes/${recipeId}`;
+      console.log("URL:", url);
+      console.log("Método: DELETE");
+      
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      
+      console.log("Delete response status:", response.status);
+      console.log("Delete response ok:", response.ok);
+      
+      if (response.ok) {
+        console.log("✅ DELETE exitoso");
+        return true;
+      } else {
+        console.error("❌ Error en DELETE:", response.status, response.statusText);
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error eliminando receta:", error);
+      return false;
+    }
+  }
 }
 
 export const recipeService = new RecipeService();

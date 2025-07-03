@@ -56,7 +56,8 @@ export default function CreateRecipeScreen() {
               {
                 text: "Reemplazar",
                 onPress: () => {
-                  // TODO: Implementar lógica de reemplazar
+                  // Configurar modo reemplazo (formulario en blanco)
+                  viewModel.replaceRecipe(duplicateInfo);
                 }
               }
             ]
@@ -101,8 +102,19 @@ export default function CreateRecipeScreen() {
   };
 
   if (viewModel.currentStep === 1) {
+    // Determinar el título según el modo
+    const getTitle = () => {
+      if (viewModel.editMode.isEditing) {
+        return "Editar receta";
+      } else if (viewModel.editMode.originalName && viewModel.editMode.recipeId) {
+        return "Reemplazar receta";
+      } else {
+        return "Crear receta";
+      }
+    };
+
     return (
-      <ScreenLayout alternativeHeader={{ title: viewModel.editMode.isEditing ? "Editar receta" : "Crear receta" }}>
+      <ScreenLayout alternativeHeader={{ title: getTitle() }}>
         <StepOne
           recipeName={viewModel.formData.name}
           setRecipeName={(name) => viewModel.updateFormData("name", name)}
@@ -113,8 +125,19 @@ export default function CreateRecipeScreen() {
     );
   }
 
+  // Determinar el título para el paso 2
+  const getTitle = () => {
+    if (viewModel.editMode.isEditing) {
+      return "Editar receta";
+    } else if (viewModel.editMode.originalName && viewModel.editMode.recipeId) {
+      return "Reemplazar receta";
+    } else {
+      return "Crear receta";
+    }
+  };
+
   return (
-    <ScreenLayout alternativeHeader={{ title: viewModel.editMode.isEditing ? "Editar receta" : "Crear receta" }}>
+    <ScreenLayout alternativeHeader={{ title: getTitle() }}>
       <RecipeForm 
         viewModel={viewModel}
         onSubmit={handleSubmit}

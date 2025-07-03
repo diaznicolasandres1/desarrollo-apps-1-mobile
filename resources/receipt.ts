@@ -14,6 +14,8 @@ export interface CreateRecipeRequest {
   status: string;
   isUpdate?: boolean;
   originalRecipeId?: string;
+  isReplacement?: boolean;
+  recipeToReplaceId?: string;
 }
 
 export interface CreateRecipeResponse {
