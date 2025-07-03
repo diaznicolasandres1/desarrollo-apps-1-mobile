@@ -153,7 +153,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
           <Text style={recipeFormStyles.sectionTitle}>Categorías</Text>
           
           <View style={recipeFormStyles.categoriesGrid}>
-            {["Vegetariano", "Postres", "Sopa", "Desayuno", "Almuerzo", "Cena", "Snacks", "Bebidas", "Ensaladas", "Carnes", "Pescados", "Pasta", "Arroz", "Pan", "Dulces"].map((category) => (
+            {["Vegetariano", "Postres","Sopa", "Desayuno", "Pastas", "Carnes y Aves", "Pescados y mariscos", "Ensaladas","Salsas", "Guarniciones", "Legumbres y guisos"].map((category) => (
               <TouchableOpacity
                 key={category}
                 style={[
