@@ -22,10 +22,7 @@ const IngredientForm: React.FC<IngredientFormProps> = ({
   const [showDropdowns, setShowDropdowns] = useState<{[key: string]: boolean}>({});
 
   const availableIngredients = [
-    "Tomate", "Cebolla", "Ajo", "Zanahoria", "Papa", "Pimiento", "Apio",
-    "Harina", "Azúcar", "Sal", "Pimienta", "Aceite", "Manteca", "Huevos",
-    "Leche", "Queso", "Pollo", "Carne", "Pescado", "Arroz", "Fideos",
-    "Pan rallado", "Perejil", "Orégano", "Laurel", "Limón", "Vinagre"
+    "Tomate", "Cebolla", "Ajo", "Fideos", 
   ];
 
   const measureTypes = ["gr", "cucharadas", "kg", "ml", "tazas", "unidad", "pizca"];
