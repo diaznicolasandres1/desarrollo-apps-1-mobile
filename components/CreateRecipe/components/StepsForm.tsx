@@ -39,9 +39,34 @@ const StepsForm: React.FC<StepsFormProps> = ({
     }
   };
 
+  // Imágenes hardcodeadas para cada paso
+  const getStepImage = (stepNumber: number) => {
+    const stepImages = {
+      1: require("@/assets/images/paso1.png"), 
+      2: require("@/assets/images/paso2.png"),  
+      3: require("@/assets/images/paso3.png"), 
+      4: require("@/assets/images/paso4.png"), 
+      5: require("@/assets/images/paso5.png"), 
+    };
+
+    // Si no hay imagen específica, usar una por defecto
+    const defaultImage = require("@/assets/images/logo.png");
+    
+    return stepImages[stepNumber as keyof typeof stepImages] || defaultImage;
+  };
+
   const addStepImage = async () => {
-    const imageUrl = "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop";
-    setStepImage(imageUrl);
+    // Calcular el número del próximo paso (pasos existentes + 1)
+    const nextStepNumber = steps.length + 1;
+    
+    // Obtener la imagen correspondiente
+    const imageSource = getStepImage(nextStepNumber);
+    
+    // Convertir require() a string para compatibilidad
+    // En React Native, podemos usar Image.resolveAssetSource para obtener la URI
+    const resolvedSource = Image.resolveAssetSource(imageSource);
+    
+    setStepImage(resolvedSource.uri);
   };
 
   return (

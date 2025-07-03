@@ -3,6 +3,9 @@ import { imageToBase64 } from "@/utils/imageUtils";
 import { useSync } from "@/context/sync.context";
 import { CreateRecipeRequest } from "@/resources/receipt";
 import { useState } from "react";
+import { recipeService, RecipeDetail } from "@/resources/RecipeService";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { Image } from "react-native";
 
 export interface Ingredient {
   name: string;
@@ -35,20 +38,23 @@ export interface RecipeFormData {
   servings: number;
 }
 
-// Mock function para simular subida de imagen
+// Mock function para simular subida de imagen desde assets locales
 export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
   await new Promise(resolve => setTimeout(resolve, 1000));
   
-  // Generar un base64 mock para simular una imagen
-  // En una implementación real, esto vendría de la cámara o galería
-  const mockBase64Images = [
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+  // Imágenes principales desde assets locales
+  const principalImages = [
+    require("@/assets/images/pastas.png"), // Imagen principal 1
+
   ];
   
-  return mockBase64Images[Math.floor(Math.random() * mockBase64Images.length)];
+  const randomImage = principalImages[Math.floor(Math.random() * principalImages.length)];
+  
+  // Convertir require() a URI usando Image.resolveAssetSource
+  const resolvedSource = Image.resolveAssetSource(randomImage);
+  
+  return resolvedSource.uri;
 };
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
