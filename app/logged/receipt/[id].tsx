@@ -177,7 +177,7 @@ const ReceiptPage = () => {
                 <Ionicons name="pencil-outline" size={25} />
               </TouchableOpacity>
             )}
-            <FavoriteButton id={id} />{" "}
+            <FavoriteButton id={id} />
             <TouchableOpacity onPress={handleOpenPortionsModal}>
               <Ionicons name="calculator-outline" size={25} />
             </TouchableOpacity>
@@ -231,8 +231,7 @@ const ReceiptPage = () => {
                   {Math.round(receipt.servings * currentMultiplier)}
                   {currentMultiplier !== 1 && (
                     <Text style={styles.originalText}>
-                      {" "}
-                      (orig: {receipt.servings})
+                      {" (orig: " + receipt.servings + ")"}
                     </Text>
                   )}
                 </Text>

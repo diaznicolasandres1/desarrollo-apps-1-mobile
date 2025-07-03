@@ -15,7 +15,7 @@ interface UniversalRecipeCardProps {
   difficulty?: string;
   status?: string;
   onPress?: () => void;
-  variant?: "normal" | "my-recipe" | "search";
+  variant?: "normal" | "my-recipe";
   creatorName?: string;
 }
 
@@ -48,13 +48,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
 
   // Configuración de tamaños de imagen
   const getImageDimensions = () => {
-    if (variant === "search") {
-      return { width: 100, height: 120 };
-    }
-    if (variant === "my-recipe") {
-      return { width: 120, height: 120 };
-    }
-    return { width: 100, height: 100 };
+    return { width: 120, height: 120 };
   };
 
   const getVariantConfig = () => {
@@ -170,8 +164,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
     // No mostrar flecha si está pendiente de aprobación
     if (status === "pending_to_approve") return null;
 
-    const iconName =
-      variant === "my-recipe" ? "chevron-forward" : "arrow-forward";
+    const iconName = "arrow-forward";
 
     return (
       <View style={styles.recipeInfoRowItem}>

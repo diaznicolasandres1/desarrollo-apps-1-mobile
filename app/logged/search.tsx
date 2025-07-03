@@ -1,5 +1,10 @@
 import ScreenLayout from "@/components/ScreenLayout";
-import { BASE_URL } from "@/constants/config";
+import {
+  BASE_URL,
+  categories,
+  excludeOptions,
+  ingredientOptions,
+} from "@/constants/config";
 import { RecipeDetail, searchRecipes } from "@/resources/receipt";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
@@ -29,21 +34,6 @@ type SearchForm = {
   user: string;
 };
 
-const ingredientOptions = ["Cebolla", "Fideos", "Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos", "Tomate"];
-const excludeOptions = ["Cebolla", "Fideos", "Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos", "Tomate"];
-const categories = [
-  "Vegetariano",
-  "Postres",
-  "Sopa",
-  "Desayuno",
-  "Pastas",
-  "Carnes y Aves",
-  "Pescados y mariscos",
-  "Ensaladas",
-  "Salsas",
-  "Guarniciones",
-  "Legumbres y guisos",
-];
 const users = ["Tomás Schuster", "Juan Perez", "Maria Gonzalez"];
 const CACHE_EXPIRATION_MS = 1 * 60 * 1000; // 1 minuto
 
@@ -76,9 +66,10 @@ const Search = () => {
     },
   });
 
-  const [showResults, setShowResults] = React.useState(false);
-  const { includeIngredients, excludeIngredients, category, user } = watch();
   const params = useLocalSearchParams();
+  const categoryParam = (params.category || "") as string;
+  const [showResults, setShowResults] = React.useState(!!categoryParam);
+  const { includeIngredients, excludeIngredients, category, user } = watch();
   const [results, setResults] = React.useState<RecipeDetail[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -112,12 +103,12 @@ const Search = () => {
   // Búsqueda automática por categoría
   useEffect(() => {
     const autoSearch = async () => {
-      if (params.category && typeof params.category === "string") {
-        setValue("category", params.category);
+      if (categoryParam) {
+        setValue("category", categoryParam);
         setLoading(true);
         setError(null);
         // Buscar en caché
-        const cached = await getCachedCategory(params.category);
+        const cached = await getCachedCategory(categoryParam);
         if (cached) {
           setResults(cached);
           setShowResults(true);
@@ -127,12 +118,12 @@ const Search = () => {
         // Si no hay caché, buscar en backend usando searchRecipes
         try {
           const data = await searchRecipes({
-            category: params.category,
+            category: categoryParam,
             onlyApproved: true,
           });
           setResults(data);
           setShowResults(true);
-          setCachedCategory(params.category, data);
+          setCachedCategory(categoryParam, data);
         } catch (err: any) {
           setError(err.message || "Error buscando recetas por categoría");
         } finally {
@@ -144,17 +135,20 @@ const Search = () => {
   }, [params.category, setValue]);
 
   // Utilidad para asociar usernames a recetas
-  const attachUsernames = async (recipes: RecipeDetail[]) => {
-    const uniqueUserIds = Array.from(new Set(recipes.map((r) => r.userId)));
-    await Promise.all(
-      uniqueUserIds.map((id) => getUserNameById(id, userCache))
-    );
-    const withUser = recipes.map((r) => ({
-      ...r,
-      creatorName: userCache[r.userId] || "Usuario desconocido",
-    }));
-    setResultsWithUser(withUser);
-  };
+  const attachUsernames = React.useCallback(
+    async (recipes: RecipeDetail[]) => {
+      const uniqueUserIds = Array.from(new Set(recipes.map((r) => r.userId)));
+      await Promise.all(
+        uniqueUserIds.map((id) => getUserNameById(id, userCache))
+      );
+      const withUser = recipes.map((r) => ({
+        ...r,
+        creatorName: userCache[r.userId] || "Usuario desconocido",
+      }));
+      setResultsWithUser(withUser);
+    },
+    [userCache]
+  );
 
   // Modificar los lugares donde se setean resultados para asociar usernames
   useEffect(() => {
@@ -163,8 +157,7 @@ const Search = () => {
     } else {
       setResultsWithUser([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [results]);
+  }, [results, attachUsernames]);
 
   // Función para ordenar resultados
   const getSortedResults = () => {
@@ -436,7 +429,6 @@ const Search = () => {
                       difficulty={recipe.difficulty}
                       status={recipe.status}
                       creatorName={recipe.creatorName}
-                      variant="search"
                     />
                   </View>
                 ))}
