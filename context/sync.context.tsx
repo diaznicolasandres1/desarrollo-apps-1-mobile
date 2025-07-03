@@ -11,7 +11,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import Toast from "react-native-toast-message";
 import { useAuth } from "./auth.context";
 
 interface SyncContextProps {
@@ -161,11 +160,6 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
                 if (createSuccess) {
                   console.log(`✅ CREATE exitoso para receta de reemplazo: ${receipt.name}`);
                   isProcessed = true;
-                  Toast.show({
-                    type: "success",
-                    text1: "Receta reemplazada", 
-                    text2: `"${receipt.name}" ha sido creada exitosamente.`,
-                  });
                 } else {
                   console.error(`❌ Error creando receta de reemplazo: ${receipt.name}`);
                 }
@@ -179,11 +173,6 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
                 
                 if (isProcessed) {
                   console.log(`✅ PUT exitoso para: ${receipt.name}`);
-                  Toast.show({
-                    type: "success",
-                    text1: "Receta actualizada",
-                    text2: `"${receipt.name}" ha sido actualizada exitosamente.`,
-                  });
                 }
               } else {
                 // Es una nueva receta
@@ -192,11 +181,6 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
                 
                 if (isProcessed) {
                   console.log(`✅ POST exitoso para: ${receipt.name}`);
-                  Toast.show({
-                    type: "success",
-                    text1: "Receta creada",
-                    text2: `"${receipt.name}" ha sido creada exitosamente.`,
-                  });
                 }
               }
 
