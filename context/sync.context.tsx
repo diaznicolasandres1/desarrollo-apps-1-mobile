@@ -60,21 +60,39 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
     setAllUserRecipes(prev => ({ ...prev, isLoading: true }));
     
     try {
-      // Cargar en paralelo servidor + storage
-      const [serverRecipes, pendingRecipes] = await Promise.all([
-        user?._id ? recipeService.getUserRecipes(user._id).catch(() => []) : Promise.resolve([]),
-        getReceiptsInStorage("createReceiptSync", []).then(recipes => recipes || [])
-      ]);
+      // Siempre cargar storage local (pendingRecipes)
+      const pendingRecipes = await getReceiptsInStorage("createReceiptSync", []).then(recipes => recipes || []);
       
-      setAllUserRecipes({
-        serverRecipes: serverRecipes || [],
-        pendingRecipes: pendingRecipes || [],
-        isLoading: false,
-      });
+      // Solo intentar cargar del servidor si hay conexión
+      if (isConnected && user?._id) {
+        try {
+          const serverRecipes = await recipeService.getUserRecipes(user._id);
+          setAllUserRecipes(prev => ({
+            serverRecipes: serverRecipes || [],
+            pendingRecipes: pendingRecipes || [],
+            isLoading: false,
+          }));
+        } catch (error) {
+          // Error del servidor - mantener serverRecipes existentes, solo actualizar pendingRecipes
+          setAllUserRecipes(prev => ({
+            ...prev,
+            pendingRecipes: pendingRecipes || [],
+            isLoading: false,
+          }));
+        }
+      } else {
+        // Offline - mantener serverRecipes existentes, solo actualizar pendingRecipes
+        setAllUserRecipes(prev => ({
+          ...prev,
+          pendingRecipes: pendingRecipes || [],
+          isLoading: false,
+        }));
+      }
     } catch (error) {
+      // Error general - mantener estado actual, solo quitar loading
       setAllUserRecipes(prev => ({ ...prev, isLoading: false }));
     }
-  }, [user?._id, getReceiptsInStorage]);
+  }, [user?._id, getReceiptsInStorage, isConnected]);
 
   // Auto-refresh cuando cambie el usuario
   useEffect(() => {
