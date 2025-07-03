@@ -29,8 +29,8 @@ type SearchForm = {
   user: string;
 };
 
-const ingredientOptions = ["Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos"];
-const excludeOptions = ["Sal", "Azucar", "Huevos"];
+const ingredientOptions = ["Cebolla", "Fideos", "Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos", "Tomate"];
+const excludeOptions = ["Cebolla", "Fideos", "Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos", "Tomate"];
 const categories = [
   "Vegetariano",
   "Postres",
