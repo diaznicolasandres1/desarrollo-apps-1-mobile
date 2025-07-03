@@ -31,6 +31,34 @@ const categories = [
     title: "Desayuno",
     img: require("@/assets/images/desayuno.png"),
   },
+  {
+    title: "Pastas",
+    img: require("@/assets/images/pastas.png"),
+  },
+  {
+    title: "Carnes y Aves",
+    img: require("@/assets/images/carnes.png"),
+  },
+  {
+    title: "Pescados y mariscos",
+    img: require("@/assets/images/pescados.png"),
+  }, 
+  {
+    title: "Ensaladas",
+    img: require("@/assets/images/ensaladas.png"),
+  },
+  {
+    title: "Salsas",
+    img: require("@/assets/images/salsas.png"),
+  },
+  {
+    title: "Guarniciones",
+    img: require("@/assets/images/guarniciones.png"),
+  },
+  {
+    title: "Legumbres y guisos",
+    img: require("@/assets/images/legumbres.png"),
+  },
 ];
 
 export default function HomeScreen() {
@@ -106,10 +134,14 @@ export default function HomeScreen() {
             style={styles.scrollHorizontal}
           >
             {categories.map(({ title, img }) => (
-              <View key={title} style={styles.categoryItem}>
+              <TouchableOpacity
+                key={title}
+                style={styles.categoryItem}
+                onPress={() => router.push({ pathname: '/logged/search-result', params: { category: title } })}
+              >
                 <Image source={img} style={styles.categoryImage} />
                 <Text style={styles.categoryText}>{title}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
