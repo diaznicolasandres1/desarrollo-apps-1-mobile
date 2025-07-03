@@ -197,6 +197,27 @@ class RecipeService {
       throw error;
     }
   }
+
+  async getRecipesByCategory(category: string): Promise<RecipeDetail[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/recipes/filter?category=${encodeURIComponent(category)}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (response.ok) {
+        const result: RecipeDetail[] = await response.json();
+        return result;
+      } else {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error obteniendo recetas por categoría:', error);
+      throw error;
+    }
+  }
 }
 
 export const recipeService = new RecipeService();
