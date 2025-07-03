@@ -47,6 +47,16 @@ export default function CreateRecipeScreen() {
     }
   };
 
+  const handleBackNavigation = () => {
+    if (viewModel.currentStep === 1) {
+      // En el primer paso, volver al home
+      router.back();
+    } else {
+      // En pasos posteriores, volver al paso anterior
+      viewModel.previousStep();
+    }
+  };
+
   if (viewModel.currentStep === 1) {
     return (
       <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
@@ -61,7 +71,10 @@ export default function CreateRecipeScreen() {
   }
 
   return (
-    <ScreenLayout alternativeHeader={{ title: "Crear receta" }}>
+    <ScreenLayout alternativeHeader={{ 
+      title: "Crear receta",
+      onBackPress: handleBackNavigation
+    }}>
       <RecipeForm 
         viewModel={viewModel}
         onSubmit={handleSubmit}

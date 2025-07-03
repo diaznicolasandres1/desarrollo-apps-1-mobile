@@ -1,5 +1,10 @@
 import ScreenLayout from "@/components/ScreenLayout";
-import { BASE_URL } from "@/constants/config";
+import {
+  BASE_URL,
+  categories,
+  excludeOptions,
+  ingredientOptions,
+} from "@/constants/config";
 import { RecipeDetail, searchRecipes } from "@/resources/receipt";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams } from "expo-router";
@@ -29,21 +34,6 @@ type SearchForm = {
   user: string;
 };
 
-const ingredientOptions = ["Harina", "Nuez Moscada", "Sal", "Azucar", "Huevos"];
-const excludeOptions = ["Sal", "Azucar", "Huevos"];
-const categories = [
-  "Vegetariano",
-  "Postres",
-  "Sopa",
-  "Desayuno",
-  "Pastas",
-  "Carnes y Aves",
-  "Pescados y mariscos",
-  "Ensaladas",
-  "Salsas",
-  "Guarniciones",
-  "Legumbres y guisos",
-];
 const users = ["Tomás Schuster", "Juan Perez", "Maria Gonzalez"];
 const CACHE_EXPIRATION_MS = 1 * 60 * 1000; // 1 minuto
 

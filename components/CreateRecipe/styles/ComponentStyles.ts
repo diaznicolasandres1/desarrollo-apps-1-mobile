@@ -536,6 +536,14 @@ export const recipeFormStyles = StyleSheet.create({
     minWidth: 150,
     paddingHorizontal: 35,
   },
+  backButton: {
+    backgroundColor: Colors.azul.azul200,
+    padding: 5,
+    borderRadius: 40,
+    alignSelf: "center",
+    minWidth: 120,
+    paddingHorizontal: 35,
+  },
   errorContainer: {
     backgroundColor: Colors.red.red100,
     padding: 12,
