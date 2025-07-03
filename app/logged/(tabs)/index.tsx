@@ -42,7 +42,7 @@ const categories = [
   {
     title: "Pescados y mariscos",
     img: require("@/assets/images/pescados.png"),
-  }, 
+  },
   {
     title: "Ensaladas",
     img: require("@/assets/images/ensaladas.png"),
@@ -70,7 +70,6 @@ export default function HomeScreen() {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={Colors.orange.orange900} />
-          <Text style={styles.loadingText}>Cargando recetas destacadas...</Text>
         </View>
       );
     }
@@ -99,12 +98,24 @@ export default function HomeScreen() {
     return (
       <View style={styles.recipesContainer}>
         {recipes.map(
-          ({ id, title, img, description, duration, difficulty }) => (
+          ({
+            description,
+            duration,
+            difficulty,
+            _id: id,
+            name: title,
+            principalPictures,
+          }) => (
             <UniversalRecipeCard
               key={id}
               id={id}
               name={title}
-              principalPictures={[{ url: img, description: title }]}
+              principalPictures={[
+                {
+                  url: principalPictures[0].url,
+                  description: principalPictures[0].description,
+                },
+              ]}
               description={description}
               difficulty={difficulty}
               duration={duration}
@@ -137,7 +148,12 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={title}
                 style={styles.categoryItem}
-                onPress={() => router.push({ pathname: '/logged/search-result', params: { category: title } })}
+                onPress={() =>
+                  router.push({
+                    pathname: "/logged/search",
+                    params: { category: title },
+                  })
+                }
               >
                 <Image source={img} style={styles.categoryImage} />
                 <Text style={styles.categoryText}>{title}</Text>
@@ -207,7 +223,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 40,
@@ -244,9 +259,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    marginTop: 40,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "bold",
     color: Colors.orange.orange900,
   },

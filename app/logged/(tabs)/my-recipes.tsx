@@ -3,10 +3,8 @@ import UniversalRecipeCard from "@/components/UniversalRecipeCard";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
-import { CreateRecipeRequest } from "@/resources/receipt";
 import { useFocusEffect } from "@react-navigation/native";
-import { useRouter } from "expo-router";
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,10 +12,8 @@ import {
   Text,
   View,
 } from "react-native";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MyRecipes() {
-  const router = useRouter();
   const { user } = useAuth();
   const { allUserRecipes, refreshUserRecipes } = useSync();
 
@@ -44,25 +40,29 @@ export default function MyRecipes() {
           <Text style={styles.sectionTitle}>Tus creaciones:</Text>
         </View>
         <View style={styles.recipesContainer}>
-          {allUserRecipes.serverRecipes.length > 0 || allUserRecipes.pendingRecipes.length > 0 ? (
+          {allUserRecipes.serverRecipes.length > 0 ||
+          allUserRecipes.pendingRecipes.length > 0 ? (
             <>
               {/* Filtrar recetas del servidor que tienen versión editada en storage local */}
               {allUserRecipes.serverRecipes
-                .filter(serverRecipe => {
+                .filter((serverRecipe) => {
                   // Si hay una receta en storage con isUpdate=true y originalRecipeId igual a esta receta del servidor,
                   // no mostrar la del servidor porque hay una versión editada offline
-                  const hasEditedVersion = allUserRecipes.pendingRecipes.some(storedRecipe => 
-                    storedRecipe.isUpdate && 
-                    storedRecipe.originalRecipeId === serverRecipe._id
+                  const hasEditedVersion = allUserRecipes.pendingRecipes.some(
+                    (storedRecipe) =>
+                      storedRecipe.isUpdate &&
+                      storedRecipe.originalRecipeId === serverRecipe._id
                   );
-                  
+
                   // Si hay una receta en storage con isReplacement=true y recipeToReplaceId igual a esta receta del servidor,
                   // no mostrar la del servidor porque ha sido reemplazada offline
-                  const hasReplacementVersion = allUserRecipes.pendingRecipes.some(storedRecipe => 
-                    storedRecipe.isReplacement && 
-                    storedRecipe.recipeToReplaceId === serverRecipe._id
-                  );
-                  
+                  const hasReplacementVersion =
+                    allUserRecipes.pendingRecipes.some(
+                      (storedRecipe) =>
+                        storedRecipe.isReplacement &&
+                        storedRecipe.recipeToReplaceId === serverRecipe._id
+                    );
+
                   return !hasEditedVersion && !hasReplacementVersion;
                 })
                 .map((recipe) => (
@@ -76,7 +76,7 @@ export default function MyRecipes() {
                     variant="my-recipe"
                   />
                 ))}
-              
+
               {/* Mostrar todas las recetas del storage local (nuevas y editadas) */}
               {allUserRecipes.pendingRecipes.map((recipe, index) => (
                 <UniversalRecipeCard

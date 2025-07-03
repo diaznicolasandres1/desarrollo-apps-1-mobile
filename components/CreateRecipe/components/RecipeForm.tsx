@@ -1,13 +1,20 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PrimaryButton } from '@/components/Button';
-import { Colors } from '@/constants/Colors';
-import { useCreateRecipeViewModel } from '@/viewmodels/CreateRecipeViewModel';
-import IngredientForm from './IngredientForm';
-import StepsForm from './StepsForm';
-import { recipeFormStyles } from '../styles/ComponentStyles';
+import { PrimaryButton } from "@/components/Button";
+import { Colors } from "@/constants/Colors";
 import { getImageUri } from "@/utils/imageUtils";
+import { useCreateRecipeViewModel } from "@/viewmodels/CreateRecipeViewModel";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import {
+  Image,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { recipeFormStyles } from "../styles/ComponentStyles";
+import IngredientForm from "./IngredientForm";
+import StepsForm from "./StepsForm";
 
 interface RecipeFormProps {
   viewModel: ReturnType<typeof useCreateRecipeViewModel>;
@@ -15,9 +22,21 @@ interface RecipeFormProps {
 }
 
 const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
-  const { formData, updateFormData, addIngredient, removeIngredient, updateIngredient, 
-          addStep, removeStep, updateStep, addPrincipalPicture, removePrincipalPicture,
-          addCategory, removeCategory, isLoading } = viewModel;
+  const {
+    formData,
+    updateFormData,
+    addIngredient,
+    removeIngredient,
+    updateIngredient,
+    addStep,
+    removeStep,
+    updateStep,
+    addPrincipalPicture,
+    removePrincipalPicture,
+    addCategory,
+    removeCategory,
+    isLoading,
+  } = viewModel;
 
   const difficulties = [
     { key: "facil", label: "Fácil" },
@@ -33,13 +52,17 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
           <Text style={recipeFormStyles.recipeNameText}>{formData.name}</Text>
         </View>
       )}
-      
+
       <ScrollView style={recipeFormStyles.scrollContainer}>
         {/* Descripción */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Descripción</Text>
           <TextInput
-            style={[recipeFormStyles.textInput, recipeFormStyles.textArea, recipeFormStyles.textInputNoLine]}
+            style={[
+              recipeFormStyles.textInput,
+              recipeFormStyles.textArea,
+              recipeFormStyles.textInputNoLine,
+            ]}
             value={formData.description}
             onChangeText={(text) => updateFormData("description", text)}
             placeholder="Describe tu receta..."
@@ -59,8 +82,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
           <View style={recipeFormStyles.imagesSectionContainer}>
             {formData.principalPictures.map((picture, index) => (
               <View key={index} style={recipeFormStyles.imageItem}>
-                <Image source={getImageUri(picture.url)} style={recipeFormStyles.recipeImage} />
-                <TouchableOpacity 
+                <Image
+                  source={getImageUri(picture.url)}
+                  style={recipeFormStyles.recipeImage}
+                />
+                <TouchableOpacity
                   style={recipeFormStyles.removeImageButton}
                   onPress={() => removePrincipalPicture(index)}
                 >
@@ -68,12 +94,16 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                 </TouchableOpacity>
               </View>
             ))}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={recipeFormStyles.addImageButtonContainer}
               onPress={() => addPrincipalPicture()}
               disabled={isLoading}
             >
-              <Ionicons name="add-circle-outline" size={24} color={Colors.olive.olive700} />
+              <Ionicons
+                name="add-circle-outline"
+                size={24}
+                color={Colors.olive.olive700}
+              />
             </TouchableOpacity>
           </View>
           <Text style={recipeFormStyles.helperTextImages}>
@@ -88,7 +118,9 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
             <View style={recipeFormStyles.numericRow}>
               <TextInput
                 style={recipeFormStyles.numericInput}
-                value={formData.duration === 0 ? "" : formData.duration.toString()}
+                value={
+                  formData.duration === 0 ? "" : formData.duration.toString()
+                }
                 onChangeText={(text) => {
                   const num = text === "" ? 0 : Number(text);
                   updateFormData("duration", isNaN(num) ? 0 : num);
@@ -101,13 +133,20 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
             </View>
             <Text style={recipeFormStyles.helperText}>Tiempo en minutos</Text>
           </View>
-          
-          <View style={[recipeFormStyles.sectionContainer, { flex: 1, marginLeft: 16 }]}>
+
+          <View
+            style={[
+              recipeFormStyles.sectionContainer,
+              { flex: 1, marginLeft: 16 },
+            ]}
+          >
             <Text style={recipeFormStyles.sectionTitle}>Porciones</Text>
             <View style={recipeFormStyles.numericRow}>
               <TextInput
                 style={recipeFormStyles.numericInput}
-                value={formData.servings === 0 ? "" : formData.servings.toString()}
+                value={
+                  formData.servings === 0 ? "" : formData.servings.toString()
+                }
                 onChangeText={(text) => {
                   const num = text === "" ? 0 : Number(text);
                   updateFormData("servings", isNaN(num) ? 0 : num);
@@ -118,7 +157,9 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
               />
               <Text style={recipeFormStyles.numericLabel}>porciones</Text>
             </View>
-            <Text style={recipeFormStyles.helperText}>Porciones que rinde la receta</Text>
+            <Text style={recipeFormStyles.helperText}>
+              Porciones que rinde la receta
+            </Text>
           </View>
         </View>
 
@@ -132,17 +173,27 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                 style={[
                   recipeFormStyles.difficultyButton,
                   {
-                    backgroundColor: formData.difficulty === diff.key 
-                      ? Colors.olive.olive200 
-                      : Colors.azul.azul50,
-                  }
+                    backgroundColor:
+                      formData.difficulty === diff.key
+                        ? Colors.olive.olive200
+                        : Colors.azul.azul50,
+                  },
                 ]}
                 onPress={() => updateFormData("difficulty", diff.key)}
               >
-                <Text style={[
-                  recipeFormStyles.difficultyText,
-                  { color: formData.difficulty === diff.key ? Colors.olive.olive700 : Colors.azul.azul300 }
-                ]}>{diff.label}</Text>
+                <Text
+                  style={[
+                    recipeFormStyles.difficultyText,
+                    {
+                      color:
+                        formData.difficulty === diff.key
+                          ? Colors.olive.olive700
+                          : Colors.azul.azul300,
+                    },
+                  ]}
+                >
+                  {diff.label}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -151,14 +202,27 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
         {/* Categorías */}
         <View style={recipeFormStyles.sectionContainer}>
           <Text style={recipeFormStyles.sectionTitle}>Categorías</Text>
-          
+
           <View style={recipeFormStyles.categoriesGrid}>
-            {["Vegetariano", "Postres","Sopa", "Desayuno", "Pastas", "Carnes y Aves", "Pescados y mariscos", "Ensaladas","Salsas", "Guarniciones", "Legumbres y guisos"].map((category) => (
+            {[
+              "Vegetariano",
+              "Postres",
+              "Sopa",
+              "Desayuno",
+              "Pastas",
+              "Carnes y Aves",
+              "Pescados y mariscos",
+              "Ensaladas",
+              "Salsas",
+              "Guarniciones",
+              "Legumbres y guisos",
+            ].map((category) => (
               <TouchableOpacity
                 key={category}
                 style={[
                   recipeFormStyles.categoryOption,
-                  formData.category.includes(category) && recipeFormStyles.categoryOptionSelected,
+                  formData.category.includes(category) &&
+                    recipeFormStyles.categoryOptionSelected,
                 ]}
                 onPress={() => {
                   if (formData.category.includes(category)) {
@@ -169,24 +233,33 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
                   }
                 }}
               >
-                <Text style={[
-                  recipeFormStyles.categoryOptionText,
-                  formData.category.includes(category) && recipeFormStyles.categoryOptionTextSelected,
-                ]}>
+                <Text
+                  style={[
+                    recipeFormStyles.categoryOptionText,
+                    formData.category.includes(category) &&
+                      recipeFormStyles.categoryOptionTextSelected,
+                  ]}
+                >
                   {category}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-          
+
           <View style={recipeFormStyles.selectedCategoriesContainer}>
-            <Text style={recipeFormStyles.selectedCategoriesLabel}>Seleccionadas:</Text>
+            <Text style={recipeFormStyles.selectedCategoriesLabel}>
+              Seleccionadas:
+            </Text>
             <View style={recipeFormStyles.categoriesContainer}>
               {formData.category.map((cat, index) => (
                 <View key={index} style={recipeFormStyles.categoryChip}>
                   <Text style={recipeFormStyles.categoryText}>{cat}</Text>
                   <TouchableOpacity onPress={() => removeCategory(index)}>
-                    <Ionicons name="close" size={16} color={Colors.orange.orange700} />
+                    <Ionicons
+                      name="close"
+                      size={16}
+                      color={Colors.orange.orange700}
+                    />
                   </TouchableOpacity>
                 </View>
               ))}
@@ -234,4 +307,4 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
   );
 };
 
-export default RecipeForm; 
+export default RecipeForm;

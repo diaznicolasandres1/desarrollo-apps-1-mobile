@@ -4,7 +4,7 @@ import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useStorage } from "@/hooks/useLocalStorage";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,7 +17,6 @@ import {
 import { RecipeDetail, getRecipeById } from "../../../resources/receipt";
 
 export default function Favorites() {
-  const router = useRouter();
   const { user } = useAuth();
   const [recipes, setRecipes] = useState<RecipeDetail[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -122,11 +121,7 @@ export default function Favorites() {
     fetchFavoriteRecipes();
   }, [fetchFavoriteRecipes]);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchFavoriteRecipes();
-    }, [fetchFavoriteRecipes])
-  );
+  useFocusEffect(refreshFavorites);
 
   const Layout = ({ children }: { children: React.ReactNode }) => (
     <ScreenLayout

@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { PrimaryButton } from '@/components/Button';
-import { Colors } from '@/constants/Colors';
-import { stepOneStyles } from '../styles/ComponentStyles';
+import { PrimaryButton } from "@/components/Button";
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { stepOneStyles } from "../styles/ComponentStyles";
 
 interface StepOneProps {
   recipeName: string;
@@ -12,11 +12,11 @@ interface StepOneProps {
   errors: Record<string, string>;
 }
 
-const StepOne: React.FC<StepOneProps> = ({ 
-  recipeName, 
-  setRecipeName, 
-  onNext, 
-  errors 
+const StepOne: React.FC<StepOneProps> = ({
+  recipeName,
+  setRecipeName,
+  onNext,
+  errors,
 }) => {
   const maxCharacters = 50;
 
@@ -35,17 +35,23 @@ const StepOne: React.FC<StepOneProps> = ({
 
       <View style={stepOneStyles.formContainer}>
         <Text style={stepOneStyles.fieldLabel}>Nombre</Text>
-        
+
         <View style={stepOneStyles.inputContainer}>
           <TextInput
-            style={[stepOneStyles.textInput, errors.name && stepOneStyles.textInputError]}
+            style={[
+              stepOneStyles.textInput,
+              errors.name && stepOneStyles.textInputError,
+            ]}
             value={recipeName}
             onChangeText={setRecipeName}
             placeholderTextColor={Colors.text}
             maxLength={maxCharacters}
           />
           {recipeName.length > 0 && (
-            <TouchableOpacity onPress={clearInput} style={stepOneStyles.clearButton}>
+            <TouchableOpacity
+              onPress={clearInput}
+              style={stepOneStyles.clearButton}
+            >
               <Ionicons name="close-circle" size={20} color={Colors.text} />
             </TouchableOpacity>
           )}
@@ -74,4 +80,4 @@ const StepOne: React.FC<StepOneProps> = ({
   );
 };
 
-export default StepOne; 
+export default StepOne;

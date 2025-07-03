@@ -6,7 +6,7 @@ import ScreenLayout from "@/components/ScreenLayout";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getRecipeById, RecipeDetail } from "@/resources/receipt";
+import { getRecipeById, Rating, RecipeDetail } from "@/resources/receipt";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -177,7 +177,7 @@ const ReceiptPage = () => {
                 <Ionicons name="pencil-outline" size={25} />
               </TouchableOpacity>
             )}
-            <FavoriteButton id={id} />{" "}
+            <FavoriteButton id={id} />
             <TouchableOpacity onPress={handleOpenPortionsModal}>
               <Ionicons name="calculator-outline" size={25} />
             </TouchableOpacity>
@@ -231,8 +231,7 @@ const ReceiptPage = () => {
                   {Math.round(receipt.servings * currentMultiplier)}
                   {currentMultiplier !== 1 && (
                     <Text style={styles.originalText}>
-                      {" "}
-                      (orig: {receipt.servings})
+                      {" (orig: " + receipt.servings + ")"}
                     </Text>
                   )}
                 </Text>
@@ -290,45 +289,27 @@ const ReceiptPage = () => {
             <Text style={styles.sectionTitle}>Comentarios</Text>
           </View>
 
+          {receipt.ratings.length === 0 && (
+            <View style={styles.innerPadding}>
+              <Text
+                style={{
+                  textAlign: "center",
+                  color: Colors.olive.olive600,
+                  fontStyle: "italic",
+                }}
+              >
+                Aún no hay comentarios para esta receta.
+              </Text>
+            </View>
+          )}
+
           <View style={styles.innerPadding}>
             <List.Section style={styles.commentList}>
-              {receipt.ratings.map((rating, i) => (
-                <List.Item
-                  key={i}
-                  title={
-                    <View style={styles.commentHeader}>
-                      <View>
-                        <Text style={styles.commentUser}>{rating.name}</Text>
-                        <Text style={styles.commentDate}>
-                          {new Date(rating.createdAt).toLocaleDateString(
-                            "es-ES"
-                          )}
-                        </Text>
-                      </View>
-                    </View>
-                  }
-                  description={
-                    <View style={styles.commentContent}>
-                      <Text style={styles.commentText}>{rating.comment}</Text>
-                      <View style={styles.commentRating}>
-                        {Array.from({ length: 5 }, (_, i) => (
-                          <Ionicons
-                            key={i}
-                            name="star"
-                            size={20}
-                            color={
-                              i < rating.score
-                                ? Colors.orange.orange600
-                                : "gray"
-                            }
-                          />
-                        ))}
-                      </View>
-                    </View>
-                  }
-                  style={styles.commentItem}
-                />
-              ))}
+              {receipt.ratings
+                .filter((rating) => rating.status === "approved")
+                .map((rating, i) => (
+                  <RatingsItem key={i} rating={rating} />
+                ))}
             </List.Section>
           </View>
 
@@ -521,3 +502,37 @@ const styles = StyleSheet.create({
 });
 
 export default ReceiptPage;
+
+const RatingsItem = ({ rating }: { rating: Rating }) => {
+  console.log(rating);
+  return (
+    <List.Item
+      title={
+        <View style={styles.commentHeader}>
+          <View>
+            <Text style={styles.commentUser}>{rating.name}</Text>
+            <Text style={styles.commentDate}>
+              {new Date(rating.createdAt).toLocaleDateString("es-ES")}
+            </Text>
+          </View>
+        </View>
+      }
+      description={
+        <View style={styles.commentContent}>
+          <Text style={styles.commentText}>{rating.comment}</Text>
+          <View style={styles.commentRating}>
+            {Array.from({ length: 5 }, (_, i) => (
+              <Ionicons
+                key={i}
+                name="star"
+                size={20}
+                color={i < rating.score ? Colors.orange.orange600 : "gray"}
+              />
+            ))}
+          </View>
+        </View>
+      }
+      style={styles.commentItem}
+    />
+  );
+};

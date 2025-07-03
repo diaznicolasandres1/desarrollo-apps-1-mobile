@@ -1,10 +1,10 @@
 import { useAuth } from "@/context/auth.context";
-import { imageToBase64 } from "@/utils/imageUtils";
 import { useSync } from "@/context/sync.context";
-import { CreateRecipeRequest } from "@/resources/receipt";
-import { useState } from "react";
-import { recipeService, RecipeDetail } from "@/resources/RecipeService";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { CreateRecipeRequest } from "@/resources/receipt";
+import { RecipeDetail } from "@/resources/RecipeService";
+import { useState } from "react";
+import { Image } from "react-native";
 
 export interface Ingredient {
   name: string;
@@ -48,7 +48,7 @@ export interface DuplicateRecipeInfo {
 // Nuevo tipo para el modo de edición
 export interface EditMode {
   isEditing: boolean;
-  editingType: 'pending' | 'server' | 'none';
+  editingType: "pending" | "server" | "none";
   originalName?: string;
   recipeId?: string;
   originalStatus?: string;
@@ -57,22 +57,32 @@ export interface EditMode {
 // Mock function para simular subida de imagen
 export const mockImageUpload = async (): Promise<string> => {
   // Simular delay de subida
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Generar un base64 mock para simular una imagen
-  // En una implementación real, esto vendría de la cámara o galería
-  const mockBase64Images = [
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
-    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  // Imágenes principales desde assets locales
+  const principalImages = [
+    require("@/assets/images/pastas.png"), // Imagen principal 1
   ];
-  
-  return mockBase64Images[Math.floor(Math.random() * mockBase64Images.length)];
+
+  const randomImage =
+    principalImages[Math.floor(Math.random() * principalImages.length)];
+
+  // Convertir require() a URI usando Image.resolveAssetSource
+  const resolvedSource = Image.resolveAssetSource(randomImage);
+
+  return resolvedSource.uri;
 };
 
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const { user, isGuest } = useAuth();
-  const { addReceiptToStorage, updateReceiptInStorage, getReceiptsInStorage, allUserRecipes, refreshUserRecipes, replaceRecipeInStorage } = useSync();
+  const {
+    addReceiptToStorage,
+    updateReceiptInStorage,
+    getReceiptsInStorage,
+    allUserRecipes,
+    refreshUserRecipes,
+    replaceRecipeInStorage,
+  } = useSync();
   const { isConnected } = useNetworkStatus();
 
   // Obtener el userId del usuario autenticado o usar un valor por defecto para invitados
@@ -104,7 +114,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   // Estado para modo edición
   const [editMode, setEditMode] = useState<EditMode>({
     isEditing: false,
-    editingType: 'none',
+    editingType: "none",
     originalName: undefined,
     recipeId: undefined,
     originalStatus: undefined,
@@ -118,7 +128,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       ...prev,
       [field]: value,
     }));
-    
+
     // Limpiar error del campo al editarlo
     if (errors[field]) {
       setErrors((prev) => ({
@@ -137,9 +147,11 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   };
 
   // Nueva función para verificar duplicados usando SOLO datos precargados (offline-first)
-  const checkForDuplicateRecipe = async (recipeName: string): Promise<DuplicateRecipeInfo> => {
+  const checkForDuplicateRecipe = async (
+    recipeName: string
+  ): Promise<DuplicateRecipeInfo> => {
     const trimmedName = recipeName.trim().toLowerCase();
-    
+
     if (!trimmedName) {
       return { exists: false };
     }
@@ -157,9 +169,9 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       // Verificar en storage local (recetas pendientes)
       let pendingRecipe: CreateRecipeRequest | undefined;
       let pendingRecipeIndex: number | undefined;
-      
-      pendingRecipeIndex = allUserRecipes.pendingRecipes.findIndex(recipe => 
-        recipe.name.trim().toLowerCase() === trimmedName
+
+      pendingRecipeIndex = allUserRecipes.pendingRecipes.findIndex(
+        (recipe) => recipe.name.trim().toLowerCase() === trimmedName
       );
       if (pendingRecipeIndex !== -1) {
         pendingRecipe = allUserRecipes.pendingRecipes[pendingRecipeIndex];
@@ -167,15 +179,16 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
       // Verificar en recetas del servidor desde el estado compartido
       let serverRecipe: RecipeDetail | undefined;
-      serverRecipe = allUserRecipes.serverRecipes.find(recipe => 
-        recipe.name.trim().toLowerCase() === trimmedName
+      serverRecipe = allUserRecipes.serverRecipes.find(
+        (recipe) => recipe.name.trim().toLowerCase() === trimmedName
       );
-      
+
       return {
         exists: !!(pendingRecipe || serverRecipe),
         serverRecipe,
         pendingRecipe,
-        pendingRecipeIndex: pendingRecipeIndex !== -1 ? pendingRecipeIndex : undefined
+        pendingRecipeIndex:
+          pendingRecipeIndex !== -1 ? pendingRecipeIndex : undefined,
       };
     } catch (error) {
       return { exists: false };
@@ -187,11 +200,11 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     try {
       console.log("=== LOADING RECIPE FOR EDITING ===");
       console.log("Duplicate info:", duplicateInfo);
-      
+
       // Storage local SIEMPRE tiene prioridad (contiene la verdad)
       if (duplicateInfo.pendingRecipe) {
         const pending = duplicateInfo.pendingRecipe;
-        
+
         // Mapear dificultad de vuelta al formato del form
         const mapDifficultyBack = (difficulty: string) => {
           switch (difficulty) {
@@ -221,16 +234,15 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
         setEditMode({
           isEditing: true,
-          editingType: 'pending',
+          editingType: "pending",
           originalName: pending.name,
           recipeId: pending.isUpdate ? pending.originalRecipeId : undefined,
           originalStatus: pending.status,
         });
-
       } else if (duplicateInfo.serverRecipe) {
         // Solo usar receta del servidor si NO hay versión en storage local
         const server = duplicateInfo.serverRecipe;
-        
+
         // Mapear dificultad de vuelta al formato del form
         const mapDifficultyBack = (difficulty: string) => {
           switch (difficulty) {
@@ -260,7 +272,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
         setEditMode({
           isEditing: true,
-          editingType: 'server',
+          editingType: "server",
           originalName: server.name,
           recipeId: server._id,
           originalStatus: server.status,
@@ -269,7 +281,6 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
       // Avanzar al paso 2 automáticamente
       setCurrentStep(2);
-
     } catch (error) {
       console.error("Error cargando receta para edición:", error);
     }
@@ -280,9 +291,9 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       console.log("=== REPLACE RECIPE ===");
       console.log("Duplicate info:", duplicateInfo);
       console.log("Is connected:", isConnected);
-      
+
       // Mantener el nombre actual, limpiar solo el resto de campos
-      setFormData(prev => ({
+      setFormData((prev) => ({
         name: prev.name, // ¡MANTENER EL NOMBRE!
         description: "",
         ingredients: [],
@@ -294,29 +305,30 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         difficulty: "",
         servings: 0,
       }));
-      
+
       // Configurar modo reemplazo sin resetear completamente
       if (duplicateInfo.pendingRecipe) {
         setEditMode({
-          isEditing: false, // Formulario para nueva receta 
-          editingType: 'none',
+          isEditing: false, // Formulario para nueva receta
+          editingType: "none",
           originalName: duplicateInfo.pendingRecipe.name,
-          recipeId: duplicateInfo.pendingRecipe.originalRecipeId || duplicateInfo.pendingRecipe.name,
+          recipeId:
+            duplicateInfo.pendingRecipe.originalRecipeId ||
+            duplicateInfo.pendingRecipe.name,
           originalStatus: duplicateInfo.pendingRecipe.status,
         });
       } else if (duplicateInfo.serverRecipe) {
         setEditMode({
           isEditing: false, // Formulario para nueva receta
-          editingType: 'none',
+          editingType: "none",
           originalName: duplicateInfo.serverRecipe.name,
           recipeId: duplicateInfo.serverRecipe._id,
           originalStatus: duplicateInfo.serverRecipe.status,
         });
       }
-      
+
       // Ir directamente al paso 2 - formulario completo con nombre preservado
       setCurrentStep(2);
-      
     } catch (error) {
       console.error("Error configurando reemplazo de receta:", error);
     }
@@ -486,7 +498,9 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       }
 
       // Mapear dificultad al formato esperado por el backend
-      const mapDifficulty = (difficulty: string): "Fácil" | "Medio" | "Difícil" => {
+      const mapDifficulty = (
+        difficulty: string
+      ): "Fácil" | "Medio" | "Difícil" => {
         switch (difficulty) {
           case "facil":
             return "Fácil";
@@ -515,7 +529,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
 
       // Manejar según modo de edición
       if (editMode.isEditing) {
-        if (editMode.editingType === 'pending') {
+        if (editMode.editingType === "pending") {
           // Editar receta pendiente en storage - mantener status original
           const recipeData: CreateRecipeRequest = {
             ...baseRecipeData,
@@ -523,16 +537,15 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           };
 
           await updateReceiptInStorage(editMode.originalName!, recipeData);
-          
+
           resetForm();
           onRecipeCreated?.();
-          
-          return { 
-            success: true, 
-            message: "Receta actualizada exitosamente" 
-          };
 
-        } else if (editMode.editingType === 'server') {
+          return {
+            success: true,
+            message: "Receta actualizada exitosamente",
+          };
+        } else if (editMode.editingType === "server") {
           // Editar receta del servidor - mantener status original
           const recipeData: CreateRecipeRequest = {
             ...baseRecipeData,
@@ -542,13 +555,13 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           };
 
           await addReceiptToStorage(recipeData);
-          
+
           resetForm();
           onRecipeCreated?.();
-          
-          return { 
-            success: true, 
-            message: "Receta actualizada exitosamente" 
+
+          return {
+            success: true,
+            message: "Receta actualizada exitosamente",
           };
         }
       } else if (editMode.originalName && editMode.recipeId) {
@@ -557,7 +570,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         console.log("Original name:", editMode.originalName);
         console.log("Recipe ID:", editMode.recipeId);
         console.log("Is connected:", isConnected);
-        
+
         if (isConnected) {
           // **REEMPLAZO ONLINE**: Eliminar anterior + crear nueva
           const recipeData: CreateRecipeRequest = {
@@ -568,15 +581,14 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           };
 
           await addReceiptToStorage(recipeData);
-          
+
           resetForm();
           onRecipeCreated?.();
-          
-          return { 
-            success: true, 
-            message: "Receta programada para reemplazo" 
+
+          return {
+            success: true,
+            message: "Receta programada para reemplazo",
           };
-          
         } else {
           // **REEMPLAZO OFFLINE**: Usar función específica de reemplazo
           const recipeData: CreateRecipeRequest = {
@@ -585,13 +597,13 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
           };
 
           await replaceRecipeInStorage(editMode.recipeId, recipeData);
-          
+
           resetForm();
           onRecipeCreated?.();
-          
-          return { 
-            success: true, 
-            message: "Receta reemplazada exitosamente" 
+
+          return {
+            success: true,
+            message: "Receta reemplazada exitosamente",
           };
         }
       } else {
@@ -602,13 +614,12 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         };
 
         await addReceiptToStorage(recipeData);
-        
+
         resetForm();
         onRecipeCreated?.();
-        
+
         return { success: true, message: "Receta guardada exitosamente" };
       }
-
     } catch (error) {
       console.error("Error al procesar receta:", error);
 
@@ -653,7 +664,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     // Reset del modo edición
     setEditMode({
       isEditing: false,
-      editingType: 'none',
+      editingType: "none",
       originalName: undefined,
       recipeId: undefined,
       originalStatus: undefined,
@@ -686,7 +697,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
     submitRecipe,
     resetForm,
     validateStep,
-    
+
     // Nuevas funciones para duplicados y edición
     checkForDuplicateRecipe,
     loadRecipeForEditing,
