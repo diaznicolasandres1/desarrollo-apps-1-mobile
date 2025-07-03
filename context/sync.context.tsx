@@ -1,14 +1,22 @@
 import { useStorage } from "@/hooks/useLocalStorage";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { createRecipe, CreateRecipeRequest } from "@/resources/receipt";
+import {
+  createRecipe,
+  CreateRecipeRequest,
+  deleteRecipe,
+  getUserRecipes,
+  RecipeDetail,
+  updateRecipe,
+} from "@/resources/receipt";
 import React, {
   createContext,
   ReactNode,
+  useCallback,
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
-import Toast from "react-native-toast-message";
 import { useAuth } from "./auth.context";
 
 interface SyncContextProps {
@@ -17,6 +25,23 @@ interface SyncContextProps {
     key: string,
     defaultValue?: CreateRecipeRequest[] | undefined
   ) => Promise<CreateRecipeRequest[] | null>;
+  removeReceiptFromStorage: (recipeName: string) => Promise<void>;
+  updateReceiptInStorage: (
+    recipeName: string,
+    updatedRecipe: CreateRecipeRequest
+  ) => Promise<void>;
+  replaceRecipeInStorage: (
+    recipeToReplaceId: string,
+    newRecipe: CreateRecipeRequest
+  ) => Promise<void>;
+
+  // Single Source of Truth: Estado unificado que combina servidor + storage
+  allUserRecipes: {
+    serverRecipes: RecipeDetail[];
+    pendingRecipes: CreateRecipeRequest[];
+    isLoading: boolean;
+  };
+  refreshUserRecipes: () => Promise<void>;
 }
 
 export const SyncContext = createContext<SyncContextProps | undefined>(
@@ -35,10 +60,75 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
   const intervalRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
 
+  // Single Source of Truth: Estado unificado
+  const [allUserRecipes, setAllUserRecipes] = useState({
+    serverRecipes: [] as RecipeDetail[],
+    pendingRecipes: [] as CreateRecipeRequest[],
+    isLoading: false,
+  });
+
+  // Función para refrescar todo el estado unificado
+  const refreshUserRecipes = useCallback(async () => {
+    setAllUserRecipes((prev) => ({ ...prev, isLoading: true }));
+
+    try {
+      // Siempre cargar storage local (pendingRecipes)
+      const pendingRecipes = await getReceiptsInStorage(
+        "createReceiptSync",
+        []
+      ).then((recipes) => recipes || []);
+
+      // Solo intentar cargar del servidor si hay conexión
+      if (isConnected && user?._id) {
+        try {
+          const serverRecipes = await getUserRecipes(user._id);
+          setAllUserRecipes((prev) => ({
+            serverRecipes: serverRecipes || [],
+            pendingRecipes: pendingRecipes || [],
+            isLoading: false,
+          }));
+        } catch (error) {
+          // Error del servidor - mantener serverRecipes existentes, solo actualizar pendingRecipes
+          setAllUserRecipes((prev) => ({
+            ...prev,
+            pendingRecipes: pendingRecipes || [],
+            isLoading: false,
+          }));
+        }
+      } else {
+        // Offline - mantener serverRecipes existentes, solo actualizar pendingRecipes
+        setAllUserRecipes((prev) => ({
+          ...prev,
+          pendingRecipes: pendingRecipes || [],
+          isLoading: false,
+        }));
+      }
+    } catch (error) {
+      // Error general - mantener estado actual, solo quitar loading
+      setAllUserRecipes((prev) => ({ ...prev, isLoading: false }));
+    }
+  }, [user?._id, getReceiptsInStorage, isConnected]);
+
+  // Auto-refresh cuando cambie el usuario
+  useEffect(() => {
+    if (user?._id && isAuthenticated) {
+      refreshUserRecipes();
+    } else {
+      setAllUserRecipes({
+        serverRecipes: [],
+        pendingRecipes: [],
+        isLoading: false,
+      });
+    }
+  }, [user?._id, isAuthenticated, refreshUserRecipes]);
+
   const addReceiptToStorage = async (receipt: CreateRecipeRequest) => {
     const receipts = await getReceiptsInStorage("createReceiptSync", []);
     const updatedReceipts = receipts ? [...receipts, receipt] : [receipt];
     await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+
+    // Auto-refresh para mantener estado sincronizado
+    await refreshUserRecipes();
   };
 
   useEffect(() => {
@@ -58,29 +148,94 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
           let updatedReceipts = [...receipts];
           for (const receipt of receipts) {
             try {
-              const isCreated = await createRecipe(receipt);
-              if (isCreated) {
+              let isProcessed = false;
+
+              console.log(`🔄 Procesando receta: "${receipt.name}"`);
+              console.log(`   - isUpdate: ${receipt.isUpdate}`);
+              console.log(`   - originalRecipeId: ${receipt.originalRecipeId}`);
+              console.log(`   - isReplacement: ${receipt.isReplacement}`);
+              console.log(
+                `   - recipeToReplaceId: ${receipt.recipeToReplaceId}`
+              );
+
+              if (receipt.isReplacement && receipt.recipeToReplaceId) {
+                // Es un reemplazo - eliminar la anterior y crear la nueva
+                console.log(
+                  `🔄 Sincronizando reemplazo de receta: ${receipt.name}`
+                );
+
+                // Paso 1: Eliminar receta anterior
+                const deleteSuccess = await deleteRecipe(
+                  receipt.recipeToReplaceId
+                );
+
+                if (deleteSuccess) {
+                  console.log(`🗑️ DELETE exitoso para receta original`);
+                } else {
+                  console.log(
+                    `ℹ️ DELETE falló (posiblemente 404 - receta ya eliminada)`
+                  );
+                }
+
+                // Paso 2: Crear nueva receta (intentar siempre, independiente del DELETE)
+                const createSuccess = await createRecipe(receipt);
+
+                if (createSuccess) {
+                  console.log(
+                    `✅ CREATE exitoso para receta de reemplazo: ${receipt.name}`
+                  );
+                  isProcessed = true;
+                } else {
+                  console.error(
+                    `❌ Error creando receta de reemplazo: ${receipt.name}`
+                  );
+                }
+              } else if (receipt.isUpdate && receipt.originalRecipeId) {
+                // Es una actualización de receta existente
+                console.log(
+                  `✏️ Sincronizando actualización de receta: ${receipt.name}`
+                );
+                isProcessed = await updateRecipe(
+                  receipt.originalRecipeId,
+                  receipt
+                );
+
+                if (isProcessed) {
+                  console.log(`✅ PUT exitoso para: ${receipt.name}`);
+                }
+              } else {
+                // Es una nueva receta
+                console.log(`➕ Sincronizando nueva receta: ${receipt.name}`);
+                isProcessed = await createRecipe(receipt);
+
+                if (isProcessed) {
+                  console.log(`✅ POST exitoso para: ${receipt.name}`);
+                }
+              }
+
+              // Si se procesó exitosamente, remover de la lista pendiente
+              if (isProcessed) {
                 updatedReceipts = updatedReceipts.filter(
                   (r) => r.name !== receipt.name
                 );
-                Toast.show({
-                  type: "success",
-                  text1: "Se ha creado la receta",
-                  text2: `"${receipt.name}" ha sido creada exitosamente.`,
-                });
               }
             } catch (error) {
-              console.error("Error creating recipe:", error);
+              console.error("Error processing recipe:", error);
             }
           }
           await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+
+          // Si hubo recetas procesadas exitosamente, actualizar estado compartido
+          if (updatedReceipts.length < receipts.length) {
+            await refreshUserRecipes();
+          }
         }
       } finally {
         isSyncingRef.current = false;
       }
     };
 
-    intervalRef.current = setInterval(checkCreateReceiptSync, 10000);
+    intervalRef.current = setInterval(checkCreateReceiptSync, 3000);
 
     return () => {
       if (intervalRef.current) {
@@ -94,6 +249,68 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       value={{
         addReceiptToStorage,
         getReceiptsInStorage,
+        removeReceiptFromStorage: async (recipeName: string) => {
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            const updatedReceipts = receipts.filter(
+              (r) => r.name !== recipeName
+            );
+            await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          }
+          // Auto-refresh para mantener estado sincronizado
+          await refreshUserRecipes();
+        },
+        updateReceiptInStorage: async (
+          recipeName: string,
+          updatedRecipe: CreateRecipeRequest
+        ) => {
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            const updatedReceipts = receipts.map((r) =>
+              r.name === recipeName ? updatedRecipe : r
+            );
+            await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+          }
+          // Auto-refresh para mantener estado sincronizado
+          await refreshUserRecipes();
+        },
+        replaceRecipeInStorage: async (
+          recipeToReplaceId: string,
+          newRecipe: CreateRecipeRequest
+        ) => {
+          console.log("=== REPLACE RECIPE IN STORAGE ===");
+          console.log("Recipe to replace ID:", recipeToReplaceId);
+          console.log("New recipe:", newRecipe.name);
+
+          const receipts = await getReceiptsInStorage("createReceiptSync", []);
+          if (receipts) {
+            // Buscar receta existente en storage local por originalRecipeId
+            const existingIndex = receipts.findIndex(
+              (r) =>
+                r.originalRecipeId === recipeToReplaceId ||
+                r.name === recipeToReplaceId // fallback por si no tiene originalRecipeId
+            );
+
+            if (existingIndex !== -1) {
+              // Reemplazar receta existente en storage local
+              console.log("🔄 Reemplazando receta existente en storage local");
+              const updatedReceipts = [...receipts];
+              updatedReceipts[existingIndex] = newRecipe;
+              await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+            } else {
+              // Agregar nueva receta con flag de reemplazo
+              console.log("➕ Agregando nueva receta con flag de reemplazo");
+              newRecipe.isReplacement = true;
+              newRecipe.recipeToReplaceId = recipeToReplaceId;
+              const updatedReceipts = [...receipts, newRecipe];
+              await setReceiptsInStorage("createReceiptSync", updatedReceipts);
+            }
+          }
+          // Auto-refresh para mantener estado sincronizado
+          await refreshUserRecipes();
+        },
+        allUserRecipes,
+        refreshUserRecipes,
       }}
     >
       {children}

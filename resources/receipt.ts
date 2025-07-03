@@ -12,6 +12,10 @@ export interface CreateRecipeRequest {
   difficulty: "Fácil" | "Medio" | "Difícil";
   servings: number;
   status: string;
+  isUpdate?: boolean;
+  originalRecipeId?: string;
+  isReplacement?: boolean;
+  recipeToReplaceId?: string;
 }
 
 export interface CreateRecipeResponse {
@@ -259,7 +263,7 @@ export const searchRecipes = async (filters: {
     }
   } catch (error) {
     console.error("Error buscando recetas:", error);
-    throw error;
+    return [];
   }
 };
 
@@ -287,7 +291,7 @@ export const getFeaturedRecipes = async (
     }
   } catch (error) {
     console.error("Error obteniendo recetas destacadas:", error);
-    throw error;
+    return [];
   }
 };
 
@@ -314,7 +318,7 @@ export const getRecipesByCategory = async (
     }
   } catch (error) {
     console.error("Error obteniendo recetas por categoría:", error);
-    throw error;
+    return [];
   }
 };
 
@@ -338,6 +342,80 @@ export const getUserRecipes = async (
     }
   } catch (error) {
     console.error("Error obteniendo recetas del usuario:", error);
-    throw error;
+    return [];
+  }
+};
+
+export const updateRecipe = async (
+  recipeId: string,
+  recipeData: CreateRecipeRequest
+): Promise<boolean> => {
+  try {
+    console.log("=== ACTUALIZANDO RECETA ===");
+    console.log("URL:", `${BASE_URL}/recipes/${recipeId}`);
+    console.log("Método:", "PUT");
+    console.log("Recipe ID:", recipeId);
+    console.log("Request Body:", JSON.stringify(recipeData, null, 2));
+    console.log("==========================");
+
+    const response = await fetch(`${BASE_URL}/recipes/${recipeId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(recipeData),
+    });
+
+    console.log("Update response status:", response.status);
+    console.log("Update response ok:", response.ok);
+
+    if (response.status === 200 || response.status === 201) {
+      const result = await response.json();
+      console.log("Update response exitosa:", result);
+      return true;
+    } else {
+      const errorData = await response.text();
+      console.error("Error updating recipe:", errorData);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error updating recipe:", error);
+    return false;
+  }
+};
+
+export const deleteRecipe = async (recipeId: string): Promise<boolean> => {
+  try {
+    console.log("=== ELIMINANDO RECETA ===");
+    console.log("Recipe ID:", recipeId);
+
+    const url = `${BASE_URL}/recipes/${recipeId}`;
+    console.log("URL:", url);
+    console.log("Método: DELETE");
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    console.log("Delete response status:", response.status);
+    console.log("Delete response ok:", response.ok);
+
+    if (response.ok) {
+      console.log("✅ DELETE exitoso");
+      return true;
+    } else {
+      console.error(
+        "❌ Error en DELETE:",
+        response.status,
+        response.statusText
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error("❌ Error eliminando receta:", error);
+    return false;
   }
 };
