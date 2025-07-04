@@ -21,7 +21,7 @@ const PasswordRecoveryEmailScreen: React.FC = () => {
     email: string;
   }>({
     defaultValues: {
-      email: "full@test.com",
+      email: "",
     },
   });
 
