@@ -11,10 +11,9 @@ import { TextInput as PaperTextInput } from "react-native-paper";
 import Toast from "react-native-toast-message";
 
 const LoginScreen: React.FC = () => {
-  const { login, isLoading, loginAsGuest } = useAuth();
+  const { login, isLoading, loginAsGuest, isAuthenticated } = useAuth();
   const { isConnected } = useNetworkStatus();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -53,7 +52,7 @@ const LoginScreen: React.FC = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/logged");
+      router.replace("/logged/(tabs)");
     }
   }, [isAuthenticated]);
 

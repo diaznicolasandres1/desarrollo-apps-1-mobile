@@ -1,12 +1,12 @@
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
 import { toastConfig } from "@/components/Toast";
 import { AuthProvider } from "@/context/auth.context";
 import { SyncProvider } from "@/context/sync.context";
+import { Slot } from "expo-router";
 import { Provider } from "react-native-paper";
 import Toast from "react-native-toast-message";
 
@@ -16,7 +16,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 
@@ -25,8 +24,8 @@ export default function RootLayout() {
       <Provider theme={{ mode: "exact" }}>
         <AuthProvider>
           <SyncProvider>
-            <Routes />
             <StatusBar style="dark" />
+            <Slot />
             <Toast config={toastConfig} position="bottom" />
           </SyncProvider>
         </AuthProvider>
@@ -34,12 +33,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-
-const Routes = () => {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="logged" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
-  );
-};

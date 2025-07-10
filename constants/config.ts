@@ -11,6 +11,7 @@ export const ingredientOptions = [
   "Huevos",
   "Tomate",
 ];
+
 export const excludeOptions = [
   "Cebolla",
   "Fideos",
@@ -21,6 +22,7 @@ export const excludeOptions = [
   "Huevos",
   "Tomate",
 ];
+
 export const categories = [
   "Vegetariano",
   "Postres",
