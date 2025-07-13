@@ -22,6 +22,20 @@ import {
 
 import { Chip, List } from "react-native-paper";
 
+export type PortionsType =
+  | "half"
+  | "double"
+  | "custom"
+  | "original"
+  | "ingredients";
+
+export type ModifiedIngredients = {
+  [key: string]: {
+    isIngredientSelected: boolean;
+    quantity: string;
+  };
+};
+
 const ReceiptPage = () => {
   const { isConnected } = useNetworkStatus();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -31,42 +45,113 @@ const ReceiptPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPortionsModal, setShowPortionsModal] = useState(false);
-  const [selectedPortionType, setSelectedPortionType] = useState<
-    "half" | "double" | "custom"
-  >("custom");
+  const [selectedPortionType, setSelectedPortionType] =
+    useState<PortionsType>("custom");
   const [customPortions, setCustomPortions] = useState("");
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
+  const [modifiedIngredients, setModifiedIngredients] =
+    useState<ModifiedIngredients>({});
 
   const { user } = useAuth();
 
   const isReceiptOwner = user?._id === receipt?.userId;
 
-  // Funciones para manejar el modal de porciones
+  const areIngredientsProportional = () => {
+    if (Object.keys(modifiedIngredients).length === 0) return false;
+
+    const ingredientCount = receipt?.ingredients.length || 0;
+    const modifiedCount = Object.keys(modifiedIngredients).length;
+
+    if (modifiedCount !== ingredientCount || modifiedCount === 0) return false;
+
+    const multipliers = Object.entries(modifiedIngredients).map(
+      ([key, ingredient]) => {
+        const index = parseInt(key);
+        const originalQuantity = receipt?.ingredients[index]?.quantity || 1;
+        return parseFloat(ingredient.quantity) / originalQuantity;
+      }
+    );
+
+    const firstMultiplier = multipliers[0];
+    return multipliers.every((m) => Math.abs(m - firstMultiplier) < 0.001);
+  };
+
   const handleOpenPortionsModal = () => {
     setCustomPortions(receipt?.servings.toString() || "");
     setShowPortionsModal(true);
   };
 
-  const handlePortionTypeSelect = (type: "half" | "double" | "custom") => {
+  const handlePortionTypeSelect = (type: PortionsType) => {
     setSelectedPortionType(type);
     if (type === "half") {
       setCustomPortions(Math.ceil((receipt?.servings || 1) / 2).toString());
     } else if (type === "double") {
       setCustomPortions(((receipt?.servings || 1) * 2).toString());
+    } else if (type === "original") {
+      // Reset to original recipe values
+      setCustomPortions(receipt?.servings.toString() || "1");
+      setModifiedIngredients({});
+      setCurrentMultiplier(1);
+    } else if (type === "ingredients") {
+      // Reset ingredient modifications when switching to ingredient mode
+      setModifiedIngredients({});
+    }
+  };
+
+  const handleIngredientQuantityChange = (
+    ingredientId: string,
+    quantity: string
+  ) => {
+    const ingredientIndex = parseInt(ingredientId);
+    const originalQuantity =
+      receipt?.ingredients[ingredientIndex]?.quantity || 1;
+
+    // Always update the modified ingredients, even if quantity is empty
+    setModifiedIngredients((prev) => ({
+      ...prev,
+      [ingredientId]: {
+        quantity,
+        isIngredientSelected: true,
+      },
+    }));
+
+    // Only do proportional calculation if quantity is valid and not empty
+    if (quantity && parseFloat(quantity) > 0 && receipt?.ingredients) {
+      const newQuantity = parseFloat(quantity);
+      const multiplier = newQuantity / originalQuantity;
+
+      const newModifiedIngredients: ModifiedIngredients = {};
+
+      receipt.ingredients.forEach((ingredient, index) => {
+        const calculatedQuantity = ingredient.quantity * multiplier;
+        newModifiedIngredients[index.toString()] = {
+          quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
+          isIngredientSelected: true,
+        };
+      });
+
+      setModifiedIngredients(newModifiedIngredients);
+      setCurrentMultiplier(multiplier);
     }
   };
 
   const handleApplyPortions = () => {
-    const newPortions = parseInt(customPortions) || 1;
-    const originalPortions = receipt?.servings || 1;
-    const multiplier = newPortions / originalPortions;
-    setCurrentMultiplier(multiplier);
-    setShowPortionsModal(false);
+    if (selectedPortionType === "ingredients") {
+      setShowPortionsModal(false);
+    } else {
+      const newPortions = parseInt(customPortions) || 1;
+      const originalPortions = receipt?.servings || 1;
+      const multiplier = newPortions / originalPortions;
+      setCurrentMultiplier(multiplier);
+      setModifiedIngredients({});
+      setShowPortionsModal(false);
+    }
   };
 
   const handleCancelPortions = () => {
     setSelectedPortionType("custom");
     setCustomPortions(receipt?.servings.toString() || "");
+    setModifiedIngredients({});
     setShowPortionsModal(false);
   };
 
@@ -175,7 +260,6 @@ const ReceiptPage = () => {
             ) : (
               <TouchableOpacity
                 onPress={() => {
-                  // Navegar a crear receta pasando el nombre para que use la lógica de duplicados
                   router.push({
                     pathname: "/logged/create",
                     params: { editRecipeName: receipt.name },
@@ -236,12 +320,27 @@ const ReceiptPage = () => {
                 />
                 <Text style={styles.statLabel}>Porciones</Text>
                 <Text style={styles.statValue}>
-                  {Math.round(receipt.servings * currentMultiplier)}
-                  {currentMultiplier !== 1 && (
-                    <Text style={styles.originalText}>
-                      {" (orig: " + receipt.servings + ")"}
-                    </Text>
-                  )}
+                  {selectedPortionType === "ingredients"
+                    ? areIngredientsProportional()
+                      ? `${
+                          Object.keys(modifiedIngredients).length > 0
+                            ? Math.round(
+                                (parseFloat(
+                                  Object.values(modifiedIngredients)[0].quantity
+                                ) /
+                                  (receipt?.ingredients[0]?.quantity || 1)) *
+                                  receipt.servings
+                              )
+                            : receipt.servings
+                        } (Prop.)`
+                      : "Personalizado"
+                    : Math.round(receipt.servings * currentMultiplier)}
+                  {currentMultiplier !== 1 &&
+                    selectedPortionType !== "ingredients" && (
+                      <Text style={styles.originalText}>
+                        {" (orig: " + receipt.servings + ")"}
+                      </Text>
+                    )}
                 </Text>
               </View>
             </View>
@@ -254,16 +353,38 @@ const ReceiptPage = () => {
           <View style={styles.innerPadding}>
             <List.Section style={styles.ingredientList}>
               {receipt.ingredients.map((ingredient, i) => {
-                const adjustedQuantity = (
-                  ingredient.quantity * currentMultiplier
-                )
+                let adjustedQuantity;
+                let isModified = false;
+
+                const modifiedIngredient = modifiedIngredients[i.toString()];
+
+                const modifiedQuantity =
+                  modifiedIngredient?.quantity ||
+                  ingredient.quantity.toString();
+
+                if (
+                  selectedPortionType === "ingredients" &&
+                  modifiedIngredient
+                ) {
+                  adjustedQuantity =
+                    parseFloat(modifiedQuantity) || ingredient.quantity;
+                  isModified = true;
+                } else {
+                  adjustedQuantity = ingredient.quantity * currentMultiplier;
+                }
+
+                const displayQuantity = adjustedQuantity
                   .toFixed(1)
                   .replace(".0", "");
+
                 return (
                   <List.Item
                     key={i}
-                    title={` • ${ingredient.name} (${adjustedQuantity} ${ingredient.measureType})`}
-                    titleStyle={styles.ingredientText}
+                    title={` • ${ingredient.name} (${displayQuantity} ${ingredient.measureType})${isModified ? " ✓" : ""}`}
+                    titleStyle={[
+                      styles.ingredientText,
+                      isModified && styles.modifiedIngredientText,
+                    ]}
                   />
                 );
               })}
@@ -347,10 +468,13 @@ const ReceiptPage = () => {
         selectedPortionType={selectedPortionType}
         customPortions={customPortions}
         onPortionTypeSelect={handlePortionTypeSelect}
+        modifiedIngredients={modifiedIngredients}
+        onIngredientQuantityChange={handleIngredientQuantityChange}
         onCustomPortionsChange={(custom: string) => {
           setCustomPortions(custom);
           setSelectedPortionType("custom");
         }}
+        ingredients={receipt.ingredients || []}
         onApply={handleApplyPortions}
         onCancel={handleCancelPortions}
       />
@@ -442,6 +566,11 @@ const styles = StyleSheet.create({
   ingredientText: {
     fontSize: 16,
     color: Colors.olive.olive800,
+    fontWeight: "bold",
+  },
+  modifiedIngredientText: {
+    fontSize: 16,
+    color: Colors.orange.orange700,
     fontWeight: "bold",
   },
   instructionsList: {
