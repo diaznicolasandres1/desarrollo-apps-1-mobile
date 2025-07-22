@@ -1,6 +1,8 @@
 import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useImagePicker } from "@/hooks/useImagePicker";
+import { normalizeImageForStorage } from "@/utils/imageUtils";
 import { CreateRecipeRequest, RecipeDetail } from "@/resources/receipt";
 import { useState } from "react";
 import { Image } from "react-native";
@@ -75,6 +77,7 @@ export const mockImageUpload = async (): Promise<string> => {
 export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const { isConnected } = useNetworkStatus();
   const { user, isGuest } = useAuth();
+  const { pickImage } = useImagePicker();
   const {
     addReceiptToStorage,
     updateReceiptInStorage,
@@ -442,17 +445,22 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
   const addPrincipalPicture = async (description: string = "") => {
     setIsLoading(true);
     try {
-      const base64Image = await mockImageUpload();
-      const newPicture: PrincipalPicture = { url: base64Image, description };
-      setFormData((prev) => ({
-        ...prev,
-        principalPictures: [...prev.principalPictures, newPicture],
-      }));
+      const imageUri = await pickImage();
+      
+      if (imageUri) {
+        // Convertir imagen local a base64 para almacenamiento
+        const normalizedImage = await normalizeImageForStorage(imageUri);
+        const newPicture: PrincipalPicture = { url: normalizedImage, description };
+        setFormData((prev) => ({
+          ...prev,
+          principalPictures: [...prev.principalPictures, newPicture],
+        }));
+      }
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Error selecting image:", error);
       setErrors((prev) => ({
         ...prev,
-        image: "Error al subir la imagen",
+        image: "Error al seleccionar la imagen",
       }));
     } finally {
       setIsLoading(false);

@@ -95,14 +95,14 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ viewModel, onSubmit }) => {
               disabled={isLoading}
             >
               <Ionicons
-                name="add-circle-outline"
+                name="camera-outline"
                 size={24}
                 color={Colors.olive.olive700}
               />
             </TouchableOpacity>
           </View>
           <Text style={recipeFormStyles.helperTextImages}>
-            La primera imagen será la principal
+            Toca el ícono de cámara para seleccionar una foto de tu galería
           </Text>
         </View>
 
