@@ -19,9 +19,9 @@ const Header = () => {
           <TouchableOpacity onPress={() => router.push("/logged/search")}>
             <Ionicons name="search-outline" size={25} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => {}}>
+          {/* <TouchableOpacity onPress={() => {}}>
             <Ionicons name="settings-outline" size={25} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
       <Text style={styles.headerText}>Recetas</Text>
