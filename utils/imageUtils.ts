@@ -28,6 +28,31 @@ export const isBase64 = (str: string): boolean => {
 };
 
 /**
+ * Verifica si una imagen base64 es demasiado grande
+ * @param base64String - String base64 de la imagen
+ * @param maxSizeKB - Tamaño máximo en KB (por defecto 80KB para estar seguros)
+ * @returns true si es demasiado grande, false si está bien
+ */
+export const isImageTooLarge = (base64String: string, maxSizeKB: number = 8000): boolean => {
+  if (!isBase64(base64String)) {
+    return false; // No es base64, no aplica
+  }
+  
+  // Calcular tamaño aproximado en KB
+  const sizeInBytes = Math.ceil((base64String.length * 3) / 4);
+  const sizeInKB = sizeInBytes / 1024;
+  
+  console.log(`📏 Tamaño de imagen: ${sizeInKB.toFixed(2)} KB (máximo: ${maxSizeKB} KB)`);
+  
+  if (sizeInKB > maxSizeKB) {
+    console.warn(`⚠️ IMAGEN DEMASIADO GRANDE: ${sizeInKB.toFixed(2)} KB > ${maxSizeKB} KB`);
+    console.warn(`💡 Sugerencia: Usar imagen por defecto o seleccionar una imagen más pequeña`);
+  }
+  
+  return sizeInKB > maxSizeKB;
+};
+
+/**
  * Detecta el tipo de imagen
  * @param imageUrl - URL de la imagen
  * @returns tipo de imagen
@@ -124,11 +149,27 @@ export const imageToBase64 = async (uri: string): Promise<string> => {
 export const normalizeImageForStorage = async (imageUrl: string): Promise<string> => {
   const imageType = getImageType(imageUrl);
   
+  console.log("🔄 Normalizando imagen:", {
+    type: imageType,
+    urlLength: imageUrl.length,
+    urlPreview: imageUrl.substring(0, 50) + '...'
+  });
+  
   switch (imageType) {
     case 'base64':
+      console.log("✅ Imagen ya es base64");
       return imageUrl;
     case 'local':
-      return await imageToBase64(imageUrl);
+      console.log("🔄 Convirtiendo imagen local a base64...");
+      const base64Image = await imageToBase64(imageUrl);
+      console.log("✅ Conversión completada, tamaño:", base64Image.length);
+      
+      // Verificar si la imagen es demasiado grande (solo para logging)
+      if (isImageTooLarge(base64Image, 8000)) {
+        console.warn("⚠️ Imagen grande detectada, pero continuando con la imagen seleccionada");
+      }
+      
+      return base64Image;
     case 'hardcoded':
       // Mantener hardcodeadas como están
       return imageUrl;

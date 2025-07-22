@@ -10,15 +10,23 @@ export const useImagePicker = () => {
         return null;
       }
 
-      // Abrir selector de imágenes
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+      // Abrir selector de imágenes con configuración ultra-compacta
+              const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.7, // Calidad mejorada ahora que el backend acepta 10MB
+          base64: false,
+          allowsMultipleSelection: false,
+        });
 
       if (!result.canceled && result.assets[0]) {
+        console.log("📸 Imagen seleccionada:", {
+          uri: result.assets[0].uri,
+          width: result.assets[0].width,
+          height: result.assets[0].height,
+          fileSize: result.assets[0].fileSize,
+        });
         return result.assets[0].uri;
       }
       return null;

@@ -2,7 +2,7 @@ import { useAuth } from "@/context/auth.context";
 import { useSync } from "@/context/sync.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useImagePicker } from "@/hooks/useImagePicker";
-import { normalizeImageForStorage } from "@/utils/imageUtils";
+import { normalizeImageForStorage, isImageTooLarge } from "@/utils/imageUtils";
 import { CreateRecipeRequest, RecipeDetail } from "@/resources/receipt";
 import { useState } from "react";
 import { Image } from "react-native";
@@ -450,6 +450,12 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
       if (imageUri) {
         // Convertir imagen local a base64 para almacenamiento
         const normalizedImage = await normalizeImageForStorage(imageUri);
+        
+                              // Verificar si la imagen es demasiado grande (solo para logging)
+                      if (isImageTooLarge(normalizedImage, 8000)) {
+                        console.warn("⚠️ Imagen grande detectada, pero continuando con la imagen seleccionada");
+                      }
+        
         const newPicture: PrincipalPicture = { url: normalizedImage, description };
         setFormData((prev) => ({
           ...prev,
