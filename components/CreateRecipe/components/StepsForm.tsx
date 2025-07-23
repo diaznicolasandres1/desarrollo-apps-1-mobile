@@ -33,10 +33,6 @@ const StepsForm: React.FC<StepsFormProps> = ({
   const { pickImage } = useImagePicker();
 
   const handleAdd = () => {
-    console.log("handleAdd called", {
-      title: title.trim(),
-      description: description.trim(),
-    });
     if (title.trim() && description.trim()) {
       onAdd({
         title: title.trim(),
@@ -46,26 +42,10 @@ const StepsForm: React.FC<StepsFormProps> = ({
       setTitle("");
       setDescription("");
       setStepImage(null);
-    } else {
-      console.log("Validation failed - title or description empty");
     }
   };
 
-  // Imágenes hardcodeadas para cada paso
-  const getStepImage = (stepNumber: number) => {
-    const stepImages = {
-      1: require("@/assets/images/paso1.png"),
-      2: require("@/assets/images/paso2.png"),
-      3: require("@/assets/images/paso3.png"),
-      4: require("@/assets/images/paso4.png"),
-      5: require("@/assets/images/paso5.png"),
-    };
 
-    // Si no hay imagen específica, usar una por defecto
-    const defaultImage = require("@/assets/images/logo.png");
-
-    return stepImages[stepNumber as keyof typeof stepImages] || defaultImage;
-  };
 
   // Función para seleccionar imagen real del celular
   const selectStepImage = async () => {
@@ -81,13 +61,7 @@ const StepsForm: React.FC<StepsFormProps> = ({
     }
   };
 
-  // Función hardcodeada como fallback
-  const addHardcodedStepImage = async () => {
-    const nextStepNumber = steps.length + 1;
-    const imageSource = getStepImage(nextStepNumber);
-    const resolvedSource = Image.resolveAssetSource(imageSource);
-    setStepImage(resolvedSource.uri);
-  };
+
 
   return (
     <View style={stepsFormStyles.sectionContainer}>
@@ -105,11 +79,9 @@ const StepsForm: React.FC<StepsFormProps> = ({
               ) : (
                 <TouchableOpacity
                   style={stepsFormStyles.addStepImageButton}
-                  onPress={() => {
-                    addHardcodedStepImage();
-                  }}
+                  onPress={selectStepImage}
                 >
-                  <Ionicons name="add" size={32} color={Colors.text} />
+                  <Ionicons name="camera-outline" size={32} color={Colors.text} />
                 </TouchableOpacity>
               )}
             </View>
@@ -188,19 +160,7 @@ const StepsForm: React.FC<StepsFormProps> = ({
                   <Text style={stepsFormStyles.addImageText}>Seleccionar foto</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[stepsFormStyles.addStepImageButtonForm, { marginTop: 8 }]}
-                  onPress={addHardcodedStepImage}
-                >
-                  <Ionicons
-                    name="images-outline"
-                    size={24}
-                    color={Colors.gray.gray500}
-                  />
-                  <Text style={[stepsFormStyles.addImageText, { color: Colors.gray.gray500 }]}>
-                    Usar imagen por defecto
-                  </Text>
-                </TouchableOpacity>
+
               </>
             )}
           </View>

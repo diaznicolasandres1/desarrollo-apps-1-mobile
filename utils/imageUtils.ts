@@ -42,12 +42,7 @@ export const isImageTooLarge = (base64String: string, maxSizeKB: number = 8000):
   const sizeInBytes = Math.ceil((base64String.length * 3) / 4);
   const sizeInKB = sizeInBytes / 1024;
   
-  console.log(`📏 Tamaño de imagen: ${sizeInKB.toFixed(2)} KB (máximo: ${maxSizeKB} KB)`);
-  
-  if (sizeInKB > maxSizeKB) {
-    console.warn(`⚠️ IMAGEN DEMASIADO GRANDE: ${sizeInKB.toFixed(2)} KB > ${maxSizeKB} KB`);
-    console.warn(`💡 Sugerencia: Usar imagen por defecto o seleccionar una imagen más pequeña`);
-  }
+
   
   return sizeInKB > maxSizeKB;
 };
@@ -149,26 +144,11 @@ export const imageToBase64 = async (uri: string): Promise<string> => {
 export const normalizeImageForStorage = async (imageUrl: string): Promise<string> => {
   const imageType = getImageType(imageUrl);
   
-  console.log("🔄 Normalizando imagen:", {
-    type: imageType,
-    urlLength: imageUrl.length,
-    urlPreview: imageUrl.substring(0, 50) + '...'
-  });
-  
   switch (imageType) {
     case 'base64':
-      console.log("✅ Imagen ya es base64");
       return imageUrl;
     case 'local':
-      console.log("🔄 Convirtiendo imagen local a base64...");
       const base64Image = await imageToBase64(imageUrl);
-      console.log("✅ Conversión completada, tamaño:", base64Image.length);
-      
-      // Verificar si la imagen es demasiado grande (solo para logging)
-      if (isImageTooLarge(base64Image, 8000)) {
-        console.warn("⚠️ Imagen grande detectada, pero continuando con la imagen seleccionada");
-      }
-      
       return base64Image;
     case 'hardcoded':
       // Mantener hardcodeadas como están

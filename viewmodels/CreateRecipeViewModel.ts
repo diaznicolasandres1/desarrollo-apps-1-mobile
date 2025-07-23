@@ -451,10 +451,7 @@ export const useCreateRecipeViewModel = (onRecipeCreated?: () => void) => {
         // Convertir imagen local a base64 para almacenamiento
         const normalizedImage = await normalizeImageForStorage(imageUri);
         
-                              // Verificar si la imagen es demasiado grande (solo para logging)
-                      if (isImageTooLarge(normalizedImage, 8000)) {
-                        console.warn("⚠️ Imagen grande detectada, pero continuando con la imagen seleccionada");
-                      }
+        
         
         const newPicture: PrincipalPicture = { url: normalizedImage, description };
         setFormData((prev) => ({

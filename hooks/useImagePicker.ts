@@ -20,15 +20,9 @@ export const useImagePicker = () => {
           allowsMultipleSelection: false,
         });
 
-      if (!result.canceled && result.assets[0]) {
-        console.log("📸 Imagen seleccionada:", {
-          uri: result.assets[0].uri,
-          width: result.assets[0].width,
-          height: result.assets[0].height,
-          fileSize: result.assets[0].fileSize,
-        });
-        return result.assets[0].uri;
-      }
+                            if (!result.canceled && result.assets[0]) {
+                        return result.assets[0].uri;
+                      }
       return null;
     } catch (error) {
       console.error('Error picking image:', error);
