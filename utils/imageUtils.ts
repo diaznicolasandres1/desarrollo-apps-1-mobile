@@ -2,6 +2,8 @@
  * Utilidades para manejar imágenes en la aplicación
  */
 
+import * as ImageManipulator from 'expo-image-manipulator';
+
 /**
  * Detecta si una cadena es base64
  * @param str - La cadena a verificar
@@ -28,12 +30,44 @@ export const isBase64 = (str: string): boolean => {
 };
 
 /**
- * Verifica si una imagen base64 es demasiado grande
+ * Compresión violenta de imagen para SQLite
+ * @param imageUri - URI de la imagen
+ * @returns Promise con la imagen comprimida en base64
+ */
+export const compressImageViolently = async (imageUri: string): Promise<string> => {
+  try {
+    const result = await ImageManipulator.manipulateAsync(
+      imageUri,
+      [
+        {
+          resize: {
+            width: 300, // Dimensiones muy pequeñas
+            height: 225, // Mantener aspect ratio 4:3
+          },
+        },
+      ],
+      {
+        compress: 0.1, // Compresión violenta - 10% calidad
+        format: ImageManipulator.SaveFormat.JPEG, // JPEG es más pequeño que PNG
+        base64: true,
+      }
+    );
+
+    // Devolver en formato data:image/jpeg;base64,... para que funcione la preview
+    return `data:image/jpeg;base64,${result.base64}`;
+  } catch (error) {
+    console.error('Error comprimiendo imagen:', error);
+    return imageUri; // Fallback a imagen original
+  }
+};
+
+/**
+ * Verifica si una imagen base64 es demasiado grande para almacenamiento local
  * @param base64String - String base64 de la imagen
- * @param maxSizeKB - Tamaño máximo en KB (por defecto 80KB para estar seguros)
+ * @param maxSizeKB - Tamaño máximo en KB (por defecto 500KB para SQLite)
  * @returns true si es demasiado grande, false si está bien
  */
-export const isImageTooLarge = (base64String: string, maxSizeKB: number = 8000): boolean => {
+export const isImageTooLarge = (base64String: string, maxSizeKB: number = 500): boolean => {
   if (!isBase64(base64String)) {
     return false; // No es base64, no aplica
   }
@@ -41,8 +75,6 @@ export const isImageTooLarge = (base64String: string, maxSizeKB: number = 8000):
   // Calcular tamaño aproximado en KB
   const sizeInBytes = Math.ceil((base64String.length * 3) / 4);
   const sizeInKB = sizeInBytes / 1024;
-  
-
   
   return sizeInKB > maxSizeKB;
 };
