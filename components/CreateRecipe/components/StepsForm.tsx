@@ -1,16 +1,16 @@
-import { Colors } from "@/constants/Colors";
-import { useImagePicker } from "@/hooks/useImagePicker";
-import { normalizeImageForStorage } from "@/utils/imageUtils";
-import { PrimaryButton } from "@/components/Button";
-import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  Image,
+  View,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { PrimaryButton } from "@/components/Button";
+import { useImagePicker } from "@/hooks/useImagePicker";
+import { compressImageViolently } from "@/utils/imageUtils";
+import { Colors } from "@/constants/Colors";
 import { stepsFormStyles } from "../styles/ComponentStyles";
 import { Step } from "@/viewmodels/CreateRecipeViewModel";
 
@@ -52,8 +52,8 @@ const StepsForm: React.FC<StepsFormProps> = ({
     try {
       const imageUri = await pickImage();
       if (imageUri) {
-        // Convertir imagen local a base64 para almacenamiento
-        const normalizedImage = await normalizeImageForStorage(imageUri);
+        // Comprimir imagen local para almacenamiento
+        const normalizedImage = await compressImageViolently(imageUri);
         setStepImage(normalizedImage);
       }
     } catch (error) {

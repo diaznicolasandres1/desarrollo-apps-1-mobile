@@ -10,19 +10,19 @@ export const useImagePicker = () => {
         return null;
       }
 
-      // Abrir selector de imágenes con configuración ultra-compacta
-              const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.7, // Calidad mejorada ahora que el backend acepta 10MB
-          base64: false,
-          allowsMultipleSelection: false,
-        });
+      // Configuración optimizada para almacenamiento local SQLite
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.25, // Calidad reducida para optimizar almacenamiento local
+        base64: false,
+        allowsMultipleSelection: false,
+      });
 
-                            if (!result.canceled && result.assets[0]) {
-                        return result.assets[0].uri;
-                      }
+      if (!result.canceled && result.assets[0]) {
+        return result.assets[0].uri;
+      }
       return null;
     } catch (error) {
       console.error('Error picking image:', error);
