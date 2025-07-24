@@ -37,7 +37,7 @@ const ReceiptPage = () => {
   const [customPortions, setCustomPortions] = useState("");
   const [currentMultiplier, setCurrentMultiplier] = useState(1);
 
-  const { user } = useAuth();
+  const { user, isGuest } = useAuth();
 
   const isReceiptOwner = user?._id === receipt?.userId;
 
@@ -168,22 +168,26 @@ const ReceiptPage = () => {
         title: receipt?.name || "Receta",
         actions: (
           <>
-            {!isReceiptOwner ? (
-              <TouchableOpacity onPress={() => router.push("/logged/create")}>
-                <Ionicons name="add-circle-outline" size={25} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  // Navegar a crear receta pasando el nombre para que use la lógica de duplicados
-                  router.push({
-                    pathname: "/logged/create",
-                    params: { editRecipeName: receipt.name },
-                  });
-                }}
-              >
-                <Ionicons name="pencil-outline" size={25} />
-              </TouchableOpacity>
+            {!isGuest && (
+              <>
+                {!isReceiptOwner ? (
+                  <TouchableOpacity onPress={() => router.push("/logged/create")}>
+                    <Ionicons name="add-circle-outline" size={25} />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => {
+                      // Navegar a crear receta pasando el nombre para que use la lógica de duplicados
+                      router.push({
+                        pathname: "/logged/create",
+                        params: { editRecipeName: receipt.name },
+                      });
+                    }}
+                  >
+                    <Ionicons name="pencil-outline" size={25} />
+                  </TouchableOpacity>
+                )}
+              </>
             )}
             <FavoriteButton id={id} />
             <TouchableOpacity onPress={handleOpenPortionsModal}>
