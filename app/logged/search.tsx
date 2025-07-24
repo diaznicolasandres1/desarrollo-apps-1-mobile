@@ -34,28 +34,6 @@ type SearchForm = {
   user: string;
 };
 
-const users = [
-  {
-    name: "Tomás Schuster",
-    id: "67d8c7370424733f9bddc252",
-  },
-  {
-    name: "Gonzalo Salvia",
-    id: "685dd2d3837c18bb4d890a2a",
-  },
-  {
-    name: "Nicolás Díaz",
-    id: "67d8bdda53ae721daa7b0552",
-  },
-  {
-    name: "Ana Pérez",
-    id: "abcdef1234567890abcdef12",
-  },
-  {
-    name: "Juan García",
-    id: "fedcba0987654321fedcba09",
-  },
-];
 const CACHE_EXPIRATION_MS = 1 * 60 * 1000; // 1 minuto
 
 const getUserNameById = async (
@@ -77,6 +55,32 @@ const getUserNameById = async (
 };
 
 const Search = () => {
+  const [users, setUsers] = React.useState<Array<{name: string, id: string}>>([]);
+  const [usersLoading, setUsersLoading] = React.useState(true);
+
+  const loadUsers = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/users`);
+      if (response.ok) {
+        const backendUsers = await response.json();
+        const formattedUsers = backendUsers.map((user: any) => ({
+          name: user.username,
+          id: user._id
+        }));
+        setUsers(formattedUsers);
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      setUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const { control, handleSubmit, setValue, watch } = useForm<SearchForm>({
     defaultValues: {
       search: "",
@@ -299,7 +303,7 @@ const Search = () => {
 
             <MultiSelectChips
               label="Usuario"
-              options={Object.values(users).map((user) => user.name)}
+              options={users.map((user) => user.name)}
               selected={user ? [user] : []}
               onChange={(value) => setValue("user", value[0])}
               onlyOne={true}
