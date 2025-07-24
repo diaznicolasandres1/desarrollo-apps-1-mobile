@@ -1,6 +1,7 @@
 /**
  * Utilidades para manejar imágenes en la aplicación
  */
+import { BASE_URL } from "@/constants/config";
 
 /**
  * Detecta si una cadena es base64
@@ -10,17 +11,17 @@
 export const isBase64 = (str: string): boolean => {
   try {
     // Verificar si comienza con data:image
-    if (str.startsWith('data:image/')) {
+    if (str.startsWith("data:image/")) {
       return true;
     }
-    
+
     // Verificar si es una cadena base64 válida (sin data:image)
     if (str.length > 0 && /^[A-Za-z0-9+/]*={0,2}$/.test(str)) {
       // Intentar decodificar para verificar que es válido
       atob(str);
       return true;
     }
-    
+
     return false;
   } catch {
     return false;
@@ -75,7 +76,71 @@ export const imageToBase64 = async (uri: string): Promise<string> => {
     // TODO: Implementar conversión real de imagen a base64
     return uri;
   } catch (error) {
-    console.error('Error converting image to base64:', error);
+    console.error("Error converting image to base64:", error);
     throw error;
   }
-}; 
+};
+
+/**
+ * Función para obtener la URL de una imagen desde el backend usando su ID
+ */
+export const getImageUrlFromId = async (imageId: string): Promise<string> => {
+  if (!imageId) return "";
+
+  // Si ya es una URL completa, devolverla tal como está
+  if (imageId.startsWith("http")) {
+    return imageId;
+  }
+
+  // Si es base64, devolverlo tal como está
+  if (isBase64(imageId)) {
+    return imageId;
+  }
+
+  try {
+    // Construir la URL para obtener la imagen desde el backend
+    const imageUrl = `${BASE_URL}/images/${imageId}`;
+    console.log("Obteniendo imagen desde:", imageUrl);
+    return imageUrl;
+  } catch (error) {
+    console.error("Error construyendo URL de imagen:", error);
+    return "";
+  }
+};
+
+/**
+ * Función para construir la URL de una imagen usando su ID
+ */
+export const buildImageUrl = (imageId: string): string => {
+  if (!imageId) return "";
+
+  // Si ya es una URL completa, devolverla tal como está
+  if (imageId.startsWith("http")) {
+    return imageId;
+  }
+
+  // Si es base64, devolverlo tal como está
+  if (isBase64(imageId)) {
+    return imageId;
+  }
+
+  // Construir la URL usando el ID
+  // Asumiendo que las imágenes están en el mismo servidor que la API
+  return `${BASE_URL}/images/${imageId}`;
+};
+
+/**
+ * Función para extraer el ID de una imagen desde una URL
+ */
+export const extractImageId = (imageUrl: string): string => {
+  if (!imageUrl) return "";
+
+  // Si es solo un ID, devolverlo tal como está
+  if (!imageUrl.includes("/")) {
+    return imageUrl;
+  }
+
+  // Extraer el ID del final de la URL
+  const parts = imageUrl.split("/");
+  return parts[parts.length - 1].split("?")[0]; // Remover query parameters
+};

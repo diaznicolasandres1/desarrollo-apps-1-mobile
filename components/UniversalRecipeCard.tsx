@@ -15,8 +15,9 @@ interface UniversalRecipeCardProps {
   difficulty?: string;
   status?: string;
   onPress?: () => void;
-  variant?: "normal" | "my-recipe";
+  variant?: "normal" | "my-recipe" | "custom-recipe";
   creatorName?: string;
+  onDeleteRecipe?: (recipeId: string, recipeTitle: string) => void;
 }
 
 const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
@@ -30,6 +31,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
   onPress,
   variant = "normal",
   creatorName,
+  onDeleteRecipe,
 }) => {
   const router = useRouter();
 
@@ -46,13 +48,22 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
     }
   };
 
+  const handleDeletePress = (event: any) => {
+    event.stopPropagation();
+    if (onDeleteRecipe && id && name) {
+      // Extraer el ID base sin el prefijo "custom-" si existe
+      const baseId = id.includes("custom-") ? id.replace("custom-", "") : id;
+      onDeleteRecipe(baseId, name);
+    }
+  };
+
   // Configuración de tamaños de imagen
   const getImageDimensions = () => {
     return { width: 120, height: 120 };
   };
 
   const getVariantConfig = () => {
-    if (variant === "my-recipe") {
+    if (variant === "my-recipe" || variant === "custom-recipe") {
       return {
         showTimeInfo: false,
         showArrow: !!status,
@@ -157,6 +168,18 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
     );
   };
 
+  const renderTrashIcon = () => {
+    if (variant !== "custom-recipe") return null;
+
+    return (
+      <View style={styles.recipeInfoRowItem}>
+        <TouchableOpacity onPress={handleDeletePress}>
+          <Ionicons name="trash-outline" size={20} color={Colors.red.red600} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   // Renderizar flecha
   const renderArrow = () => {
     if (!config.showArrow) return null;
@@ -208,6 +231,7 @@ const UniversalRecipeCard: React.FC<UniversalRecipeCardProps> = ({
           </Text>
         </View>
 
+        <View style={styles.trashIconContainer}>{renderTrashIcon()}</View>
         {(config.showTimeInfo || config.showStatus || config.showArrow) && (
           <View style={styles.recipeInfoRow}>
             <View style={styles.leftSection}>
@@ -317,6 +341,13 @@ const styles = StyleSheet.create({
     color: Colors.gray.gray600,
     marginLeft: 4,
     fontFamily: "RobotoMedium",
+  },
+  trashIconContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    marginTop: 10,
+    marginBottom: 10,
   },
 });
 

@@ -1,7 +1,8 @@
 import { ModifiedIngredients, PortionsType } from "@/app/logged/receipt/[id]";
 import { Colors } from "@/constants/Colors";
+import { useSavedCustomRecipe } from "@/hooks/useSavedCustomRecipe";
 import { Ingredient } from "@/resources/receipt";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   StyleSheet,
@@ -10,8 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
-interface PortionsModalProps {
+export interface PortionsModalProps {
+  id: string;
   visible: boolean;
   originalServings: number;
   selectedPortionType: PortionsType;
@@ -23,9 +26,14 @@ interface PortionsModalProps {
   onIngredientQuantityChange: (ingredientId: string, quantity: string) => void;
   onApply: () => void;
   onCancel: () => void;
+  // Información de la receta para guardar
+  recipeTitle?: string;
+  recipeDescription?: string;
+  recipeImage?: string;
 }
 
 const PortionsModal: React.FC<PortionsModalProps> = ({
+  id,
   visible,
   originalServings,
   selectedPortionType,
@@ -37,21 +45,75 @@ const PortionsModal: React.FC<PortionsModalProps> = ({
   onIngredientQuantityChange,
   onApply,
   onCancel,
+  recipeTitle = "",
+  recipeDescription = "",
+  recipeImage = "",
 }) => {
+  const { saveCustomRecipe, canSaveCustomRecipe } = useSavedCustomRecipe();
   const [selectedIngredientIndex, setSelectedIngredientIndex] =
     useState<number>(0);
-
-  React.useEffect(() => {
-    if (!visible || selectedPortionType !== "ingredients") {
-      setSelectedIngredientIndex(0);
-    }
-  }, [visible, selectedPortionType]);
+  const [canSave, setCanSave] = useState<boolean>(false);
 
   // Ensure selectedIngredientIndex is valid
   const validSelectedIndex = Math.min(
     selectedIngredientIndex,
     (ingredients?.length || 1) - 1
   );
+
+  useEffect(() => {
+    const checkCanSave = async () => {
+      if (visible && id) {
+        const result = await canSaveCustomRecipe(id);
+        setCanSave(result);
+      }
+    };
+    checkCanSave();
+  }, [visible, id, canSaveCustomRecipe]);
+
+  const handleSaveCustomRecipe = async () => {
+    if (!canSave) return;
+
+    const customRecipe = {
+      recipe: {
+        id,
+        title: recipeTitle,
+        description: recipeDescription,
+        image: recipeImage,
+      },
+      state: {
+        isCustomized: true,
+        portionType: selectedPortionType,
+        customPortions,
+        currentMultiplier: 1, // Se puede calcular después si es necesario
+        modifiedIngredients,
+        adjustedServings: parseInt(customPortions) || originalServings,
+        baseRecipeId: id,
+        baseRecipeName: recipeTitle,
+      },
+    };
+
+    try {
+      await saveCustomRecipe(customRecipe);
+
+      // Mostrar toast de éxito
+      Toast.show({
+        type: "success",
+        text1: "¡Éxito!",
+        text2: "Receta personalizada guardada exitosamente",
+      });
+      // Actualizar el estado después de guardar
+      setCanSave(false);
+      // Cerrar la modal
+      onCancel();
+    } catch (error) {
+      // Mostrar toast de error si algo falla
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se pudo guardar la receta personalizada",
+      });
+    }
+  };
 
   return (
     <Modal
@@ -173,40 +235,41 @@ const PortionsModal: React.FC<PortionsModalProps> = ({
           {selectedPortionType === "ingredients" ? (
             <View style={styles.modalCustomInputContainer}>
               <Text style={styles.modalDescription}>
-                Selecciona un ingrediente para modificar su cantidad:
+                Seleccioná un ingrediente para modificar su cantidad:
               </Text>
 
-              {/* Grid para seleccionar ingrediente */}
               <View style={styles.dropdownContainer}>
                 <Text style={styles.dropdownLabel}>Ingrediente:</Text>
                 <View style={styles.ingredientGrid}>
-                  {ingredients.map((ingredient, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.ingredientChip,
-                        selectedIngredientIndex === index &&
-                          styles.ingredientChipSelected,
-                        modifiedIngredients[index.toString()] &&
-                          styles.ingredientChipModified,
-                      ]}
-                      onPress={() => setSelectedIngredientIndex(index)}
-                    >
-                      <Text
-                        style={[
-                          styles.ingredientChipText,
-                          selectedIngredientIndex === index &&
-                            styles.ingredientChipTextSelected,
-                        ]}
-                      >
-                        {ingredient.name}
-                      </Text>
+                  {ingredients.map((ingredient, index) => {
+                    const isSelectedIngredient =
+                      selectedIngredientIndex === index;
 
-                      {modifiedIngredients[index.toString()] && (
-                        <Text style={styles.modifiedBadge}>●</Text>
-                      )}
-                    </TouchableOpacity>
-                  ))}
+                    return (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.ingredientChip,
+                          isSelectedIngredient && styles.ingredientChipSelected,
+                        ]}
+                        onPress={() => setSelectedIngredientIndex(index)}
+                      >
+                        <Text
+                          style={[
+                            styles.ingredientChipText,
+                            selectedIngredientIndex === index &&
+                              styles.ingredientChipTextSelected,
+                          ]}
+                        >
+                          {ingredient.name}
+                        </Text>
+
+                        {modifiedIngredients[index.toString()] && (
+                          <Text style={styles.modifiedBadge}>●</Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
 
@@ -221,7 +284,7 @@ const PortionsModal: React.FC<PortionsModalProps> = ({
                       style={styles.selectedIngredientInput}
                       value={
                         modifiedIngredients[validSelectedIndex.toString()]
-                          ?.quantity ||
+                          ?.quantity ??
                         ingredients[validSelectedIndex].quantity.toString()
                       }
                       onChangeText={(value) => {
@@ -257,6 +320,26 @@ const PortionsModal: React.FC<PortionsModalProps> = ({
               </View>
             </View>
           )}
+
+          <TouchableOpacity
+            style={[
+              styles.modalActionButton,
+              styles.saveButton,
+              !canSave && styles.saveButtonDisabled,
+            ]}
+            onPress={canSave ? handleSaveCustomRecipe : undefined}
+            activeOpacity={canSave ? 0.7 : 1}
+          >
+            <Text
+              style={[
+                styles.modalActionButtonText,
+                styles.saveButtonText,
+                !canSave && styles.saveButtonTextDisabled,
+              ]}
+            >
+              Guardar receta personalizada
+            </Text>
+          </TouchableOpacity>
 
           <View style={styles.modalActions}>
             <TouchableOpacity
@@ -344,7 +427,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   modalCustomInputContainer: {
-    marginBottom: 20,
     alignItems: "center",
     backgroundColor: Colors.olive.olive50,
     borderRadius: 16,
@@ -383,6 +465,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: Colors.olive.olive900,
+  },
+  saveButton: {
+    backgroundColor: Colors.orange.orange500,
+    marginHorizontal: 5,
+    marginBottom: 15,
+    paddingVertical: 10,
+  },
+  saveButtonDisabled: {
+    backgroundColor: Colors.gray.gray300,
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    color: "white",
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  saveButtonTextDisabled: {
+    color: Colors.gray.gray500,
   },
   ingredientRow: {
     flexDirection: "row",

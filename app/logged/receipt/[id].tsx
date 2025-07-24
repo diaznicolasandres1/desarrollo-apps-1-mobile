@@ -1,17 +1,19 @@
-import CommentForm from "@/components/CommentForm";
 import FavoriteButton from "@/components/FavoriteButton";
 import { ImageGallery } from "@/components/ImageGallery";
 import PortionsModal from "@/components/PortionsModal";
 import ScreenLayout from "@/components/ScreenLayout";
+import Ingredients, { Ratings } from "@/components/SIngleRecipe";
 import { Colors } from "@/constants/Colors";
 import { useAuth } from "@/context/auth.context";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { getRecipeById, Rating, RecipeDetail } from "@/resources/receipt";
+import { useSavedCustomRecipe } from "@/hooks/useSavedCustomRecipe";
+import { getRecipeById, RecipeDetail } from "@/resources/receipt";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -21,6 +23,7 @@ import {
 } from "react-native";
 
 import { Chip, List } from "react-native-paper";
+import Toast from "react-native-toast-message";
 
 export type PortionsType =
   | "half"
@@ -36,6 +39,18 @@ export type ModifiedIngredients = {
   };
 };
 
+export interface CustomRecipeState {
+  isCustomized: boolean;
+  portionType: PortionsType;
+  customPortions: string;
+  currentMultiplier: number;
+  modifiedIngredients: ModifiedIngredients;
+  // Información adicional para el guardado
+  adjustedServings: number;
+  baseRecipeId: string;
+  baseRecipeName: string;
+}
+
 const ReceiptPage = () => {
   const { isConnected } = useNetworkStatus();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -45,57 +60,144 @@ const ReceiptPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPortionsModal, setShowPortionsModal] = useState(false);
-  const [selectedPortionType, setSelectedPortionType] =
-    useState<PortionsType>("custom");
-  const [customPortions, setCustomPortions] = useState("");
-  const [currentMultiplier, setCurrentMultiplier] = useState(1);
-  const [modifiedIngredients, setModifiedIngredients] =
-    useState<ModifiedIngredients>({});
+  const { getCustomRecipe, deleteCustomRecipe } = useSavedCustomRecipe();
+
+  const [customRecipeState, setCustomRecipeState] = useState<CustomRecipeState>(
+    {
+      isCustomized: false,
+      portionType: "custom",
+      customPortions: "",
+      currentMultiplier: 1,
+      modifiedIngredients: {},
+      adjustedServings: 0,
+      baseRecipeId: "",
+      baseRecipeName: "",
+    }
+  );
 
   const { user } = useAuth();
 
   const isReceiptOwner = user?._id === receipt?.userId;
 
-  const areIngredientsProportional = () => {
-    if (Object.keys(modifiedIngredients).length === 0) return false;
+  useEffect(() => {
+    (async () => {
+      if (receipt && id) {
+        try {
+          if (id.includes("custom-")) {
+            // Extraer el ID base sin el prefijo "custom-"
+            const baseId = id.replace("custom-", "");
+            const savedRecipe = await getCustomRecipe(baseId);
+            if (savedRecipe) {
+              console.log("Receta personalizada cargada:", savedRecipe);
+              setCustomRecipeState((prev) => ({
+                ...prev,
+                ...savedRecipe.state,
+              }));
+              return;
+            } else {
+              console.log(
+                "No se encontró receta personalizada para ID:",
+                baseId
+              );
+            }
+          }
 
-    const ingredientCount = receipt?.ingredients.length || 0;
-    const modifiedCount = Object.keys(modifiedIngredients).length;
-
-    if (modifiedCount !== ingredientCount || modifiedCount === 0) return false;
-
-    const multipliers = Object.entries(modifiedIngredients).map(
-      ([key, ingredient]) => {
-        const index = parseInt(key);
-        const originalQuantity = receipt?.ingredients[index]?.quantity || 1;
-        return parseFloat(ingredient.quantity) / originalQuantity;
+          setCustomRecipeState((prev) => ({
+            ...prev,
+            baseRecipeId: id,
+            baseRecipeName: receipt.name,
+            customPortions: receipt.servings.toString(),
+            adjustedServings: receipt.servings,
+          }));
+        } catch (error) {
+          console.error("Error loading custom recipe state:", error);
+          // Si hay error, usar valores por defecto
+          setCustomRecipeState((prev) => ({
+            ...prev,
+            baseRecipeId: id,
+            baseRecipeName: receipt.name,
+            customPortions: receipt.servings.toString(),
+            adjustedServings: receipt.servings,
+          }));
+        }
       }
-    );
-
-    const firstMultiplier = multipliers[0];
-    return multipliers.every((m) => Math.abs(m - firstMultiplier) < 0.001);
-  };
+    })();
+  }, [receipt, id]);
 
   const handleOpenPortionsModal = () => {
-    setCustomPortions(receipt?.servings.toString() || "");
+    setCustomRecipeState((prev) => ({
+      ...prev,
+      customPortions: receipt?.servings.toString() || "",
+    }));
     setShowPortionsModal(true);
   };
 
   const handlePortionTypeSelect = (type: PortionsType) => {
-    setSelectedPortionType(type);
-    if (type === "half") {
-      setCustomPortions(Math.ceil((receipt?.servings || 1) / 2).toString());
-    } else if (type === "double") {
-      setCustomPortions(((receipt?.servings || 1) * 2).toString());
-    } else if (type === "original") {
-      // Reset to original recipe values
-      setCustomPortions(receipt?.servings.toString() || "1");
-      setModifiedIngredients({});
-      setCurrentMultiplier(1);
-    } else if (type === "ingredients") {
-      // Reset ingredient modifications when switching to ingredient mode
-      setModifiedIngredients({});
-    }
+    setCustomRecipeState((prev) => {
+      let newState = { ...prev, portionType: type, isCustomized: true };
+
+      if (type === "half") {
+        const multiplier = 0.5;
+        newState.customPortions = Math.ceil(
+          (receipt?.servings || 1) / 2
+        ).toString();
+        newState.adjustedServings = Math.ceil((receipt?.servings || 1) / 2);
+        newState.currentMultiplier = multiplier;
+
+        // Calcular ingredientes modificados
+        const proportionalIngredients: ModifiedIngredients = {};
+        if (receipt?.ingredients) {
+          receipt.ingredients.forEach((ingredient, index) => {
+            const calculatedQuantity = ingredient.quantity * multiplier;
+            proportionalIngredients[index.toString()] = {
+              quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
+              isIngredientSelected: false,
+            };
+          });
+        }
+        newState.modifiedIngredients = proportionalIngredients;
+        console.log(
+          "✅ Ingredientes calculados para 'half':",
+          proportionalIngredients
+        );
+      } else if (type === "double") {
+        const multiplier = 2;
+        newState.customPortions = ((receipt?.servings || 1) * 2).toString();
+        newState.adjustedServings = (receipt?.servings || 1) * 2;
+        newState.currentMultiplier = multiplier;
+
+        // Calcular ingredientes modificados
+        const proportionalIngredients: ModifiedIngredients = {};
+        if (receipt?.ingredients) {
+          receipt.ingredients.forEach((ingredient, index) => {
+            const calculatedQuantity = ingredient.quantity * multiplier;
+            proportionalIngredients[index.toString()] = {
+              quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
+              isIngredientSelected: false,
+            };
+          });
+        }
+        newState.modifiedIngredients = proportionalIngredients;
+        console.log(
+          "✅ Ingredientes calculados para 'double':",
+          proportionalIngredients
+        );
+      } else if (type === "original") {
+        newState = {
+          ...prev,
+          isCustomized: false,
+          portionType: "original",
+          customPortions: receipt?.servings.toString() || "1",
+          currentMultiplier: 1,
+          modifiedIngredients: {},
+          adjustedServings: receipt?.servings || 1,
+        };
+      } else if (type === "ingredients") {
+        newState.modifiedIngredients = {};
+      }
+
+      return newState;
+    });
   };
 
   const handleIngredientQuantityChange = (
@@ -106,53 +208,131 @@ const ReceiptPage = () => {
     const originalQuantity =
       receipt?.ingredients[ingredientIndex]?.quantity || 1;
 
-    // Always update the modified ingredients, even if quantity is empty
-    setModifiedIngredients((prev) => ({
-      ...prev,
-      [ingredientId]: {
-        quantity,
-        isIngredientSelected: true,
-      },
-    }));
+    setCustomRecipeState((prev) => {
+      const newModifiedIngredients = {
+        ...prev.modifiedIngredients,
+        [ingredientId]: {
+          quantity,
+          isIngredientSelected: quantity !== "",
+        },
+      };
 
-    // Only do proportional calculation if quantity is valid and not empty
-    if (quantity && parseFloat(quantity) > 0 && receipt?.ingredients) {
-      const newQuantity = parseFloat(quantity);
-      const multiplier = newQuantity / originalQuantity;
+      let newState = {
+        ...prev,
+        modifiedIngredients: newModifiedIngredients,
+        isCustomized: true,
+      };
 
-      const newModifiedIngredients: ModifiedIngredients = {};
+      // Only do proportional calculation if quantity is valid and not empty
+      if (quantity && parseFloat(quantity) > 0 && receipt?.ingredients) {
+        const newQuantity = parseFloat(quantity);
+        const multiplier = newQuantity / originalQuantity;
 
-      receipt.ingredients.forEach((ingredient, index) => {
-        const calculatedQuantity = ingredient.quantity * multiplier;
-        newModifiedIngredients[index.toString()] = {
-          quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
-          isIngredientSelected: true,
-        };
-      });
+        const proportionalIngredients: ModifiedIngredients = {};
 
-      setModifiedIngredients(newModifiedIngredients);
-      setCurrentMultiplier(multiplier);
-    }
+        receipt.ingredients.forEach((ingredient, index) => {
+          const calculatedQuantity = ingredient.quantity * multiplier;
+          proportionalIngredients[index.toString()] = {
+            quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
+            isIngredientSelected: index === ingredientIndex, // Solo el ingrediente modificado por el usuario
+          };
+        });
+
+        newState.modifiedIngredients = proportionalIngredients;
+        newState.currentMultiplier = multiplier;
+        newState.adjustedServings = Math.round(receipt.servings * multiplier);
+      }
+
+      return newState;
+    });
   };
 
   const handleApplyPortions = () => {
-    if (selectedPortionType === "ingredients") {
+    if (customRecipeState.portionType === "ingredients") {
       setShowPortionsModal(false);
     } else {
-      const newPortions = parseInt(customPortions) || 1;
+      const newPortions = parseInt(customRecipeState.customPortions) || 1;
       const originalPortions = receipt?.servings || 1;
       const multiplier = newPortions / originalPortions;
-      setCurrentMultiplier(multiplier);
-      setModifiedIngredients({});
+
+      // Calcular ingredientes modificados proporcionalmente
+      const proportionalIngredients: ModifiedIngredients = {};
+      if (receipt?.ingredients) {
+        receipt.ingredients.forEach((ingredient, index) => {
+          const calculatedQuantity = ingredient.quantity * multiplier;
+          proportionalIngredients[index.toString()] = {
+            quantity: calculatedQuantity.toFixed(2).replace(/\.?0+$/, ""),
+            isIngredientSelected: false,
+          };
+        });
+      }
+
+      setCustomRecipeState((prev) => ({
+        ...prev,
+        currentMultiplier: multiplier,
+        modifiedIngredients: proportionalIngredients,
+        adjustedServings: newPortions,
+        isCustomized: multiplier !== 1,
+      }));
+
       setShowPortionsModal(false);
     }
   };
 
   const handleCancelPortions = () => {
-    setSelectedPortionType("custom");
-    setCustomPortions(receipt?.servings.toString() || "");
-    setModifiedIngredients({});
+    setCustomRecipeState((prev) => ({
+      ...prev,
+      portionType: "custom",
+      customPortions: receipt?.servings.toString() || "",
+      modifiedIngredients: {},
+    }));
     setShowPortionsModal(false);
+  };
+
+  const handleDeleteCustomRecipe = async () => {
+    if (!id || !id.includes("custom-")) return;
+
+    const baseId = id.replace("custom-", "");
+    const customRecipe = await getCustomRecipe(baseId);
+
+    if (!customRecipe) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No se encontró la receta personalizada",
+      });
+      return;
+    }
+
+    Alert.alert(
+      "Eliminar receta personalizada",
+      `¿Estás seguro de que quieres eliminar "${customRecipe.recipe.title}"? Esta acción no se puede deshacer.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteCustomRecipe(baseId);
+              Toast.show({
+                type: "success",
+                text1: "¡Éxito!",
+                text2: "Receta personalizada eliminada exitosamente",
+              });
+              router.back();
+            } catch (error) {
+              console.error("Error deleting custom recipe:", error);
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2: "No se pudo eliminar la receta personalizada",
+              });
+            }
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {
@@ -174,7 +354,11 @@ const ReceiptPage = () => {
         setLoading(true);
         setError(null);
 
-        const data = await getRecipeById(id);
+        const idWithoutPrefix = id.startsWith("custom-")
+          ? id.replace("custom-", "")
+          : id;
+
+        const data = await getRecipeById(idWithoutPrefix);
 
         if (isMounted) {
           if (data) {
@@ -193,7 +377,6 @@ const ReceiptPage = () => {
       }
     };
 
-    // Limpiar estado anterior cuando cambia el ID
     setReceipt(null);
     setError(null);
     setLoading(true);
@@ -204,6 +387,20 @@ const ReceiptPage = () => {
       isMounted = false;
     };
   }, [id, isConnected]);
+
+  const getPortionsDisplayInfo = () => {
+    if (!receipt) return { currentServings: 1, showOriginalServings: false };
+
+    const currentServings = customRecipeState.isCustomized
+      ? customRecipeState.adjustedServings
+      : receipt.servings;
+
+    const showOriginalServings =
+      customRecipeState.isCustomized &&
+      customRecipeState.adjustedServings !== receipt.servings;
+
+    return { currentServings, showOriginalServings };
+  };
 
   if (!id) {
     return (
@@ -270,8 +467,25 @@ const ReceiptPage = () => {
               </TouchableOpacity>
             )}
             <FavoriteButton id={id} />
+            {id.includes("custom-") && (
+              <TouchableOpacity onPress={handleDeleteCustomRecipe}>
+                <Ionicons
+                  name="trash-outline"
+                  size={25}
+                  color={Colors.red.red600}
+                />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={handleOpenPortionsModal}>
-              <Ionicons name="calculator-outline" size={25} />
+              <Ionicons
+                name="calculator-outline"
+                size={25}
+                color={
+                  customRecipeState.isCustomized
+                    ? Colors.orange.orange600
+                    : Colors.gray.gray700
+                }
+              />
             </TouchableOpacity>
           </>
         ),
@@ -320,76 +534,29 @@ const ReceiptPage = () => {
                 />
                 <Text style={styles.statLabel}>Porciones</Text>
                 <Text style={styles.statValue}>
-                  {selectedPortionType === "ingredients"
-                    ? areIngredientsProportional()
-                      ? `${
-                          Object.keys(modifiedIngredients).length > 0
-                            ? Math.round(
-                                (parseFloat(
-                                  Object.values(modifiedIngredients)[0].quantity
-                                ) /
-                                  (receipt?.ingredients[0]?.quantity || 1)) *
-                                  receipt.servings
-                              )
-                            : receipt.servings
-                        } (Prop.)`
-                      : "Personalizado"
-                    : Math.round(receipt.servings * currentMultiplier)}
-                  {currentMultiplier !== 1 &&
-                    selectedPortionType !== "ingredients" && (
-                      <Text style={styles.originalText}>
-                        {" (orig: " + receipt.servings + ")"}
-                      </Text>
-                    )}
+                  {(() => {
+                    const { currentServings, showOriginalServings } =
+                      getPortionsDisplayInfo();
+                    return (
+                      <>
+                        {currentServings}
+                        {showOriginalServings && (
+                          <Text style={styles.originalText}>
+                            {" (orig: " + receipt.servings + ")"}
+                          </Text>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Ingredientes</Text>
-          </View>
-
-          <View style={styles.innerPadding}>
-            <List.Section style={styles.ingredientList}>
-              {receipt.ingredients.map((ingredient, i) => {
-                let adjustedQuantity;
-                let isModified = false;
-
-                const modifiedIngredient = modifiedIngredients[i.toString()];
-
-                const modifiedQuantity =
-                  modifiedIngredient?.quantity ||
-                  ingredient.quantity.toString();
-
-                if (
-                  selectedPortionType === "ingredients" &&
-                  modifiedIngredient
-                ) {
-                  adjustedQuantity =
-                    parseFloat(modifiedQuantity) || ingredient.quantity;
-                  isModified = true;
-                } else {
-                  adjustedQuantity = ingredient.quantity * currentMultiplier;
-                }
-
-                const displayQuantity = adjustedQuantity
-                  .toFixed(1)
-                  .replace(".0", "");
-
-                return (
-                  <List.Item
-                    key={i}
-                    title={` • ${ingredient.name} (${displayQuantity} ${ingredient.measureType})${isModified ? " ✓" : ""}`}
-                    titleStyle={[
-                      styles.ingredientText,
-                      isModified && styles.modifiedIngredientText,
-                    ]}
-                  />
-                );
-              })}
-            </List.Section>
-          </View>
+          <Ingredients
+            ingredients={receipt.ingredients}
+            customRecipeState={customRecipeState}
+          />
 
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Pasos a seguir</Text>
@@ -414,69 +581,37 @@ const ReceiptPage = () => {
             ))}
           </List.Section>
 
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Comentarios</Text>
-          </View>
-
-          {receipt.ratings.length === 0 && (
-            <View style={styles.innerPadding}>
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: Colors.olive.olive600,
-                  fontStyle: "italic",
-                }}
-              >
-                Aún no hay comentarios para esta receta.
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.innerPadding}>
-            <List.Section style={styles.commentList}>
-              {receipt.ratings
-                .filter((rating) => rating.status === "approved")
-                .map((rating, i) => (
-                  <RatingsItem key={i} rating={rating} />
-                ))}
-            </List.Section>
-          </View>
-
-          {!isReceiptOwner && (
-            <View style={styles.innerPadding}>
-              <CommentForm
-                recipeId={id}
-                onCommentAdded={async () => {
-                  try {
-                    const data = await getRecipeById(id);
-                    if (data) {
-                      setReceipt(data);
-                    }
-                  } catch (error) {
-                    console.error("Error al recargar comentarios:", error);
-                  }
-                }}
-              />
-            </View>
-          )}
+          <Ratings
+            ratings={receipt.ratings}
+            recipeId={id}
+            isReceiptOwner={isReceiptOwner}
+          />
         </View>
       </ScrollView>
 
       <PortionsModal
+        id={id}
         visible={showPortionsModal}
         originalServings={receipt?.servings || 1}
-        selectedPortionType={selectedPortionType}
-        customPortions={customPortions}
+        selectedPortionType={customRecipeState.portionType}
+        customPortions={customRecipeState.customPortions}
         onPortionTypeSelect={handlePortionTypeSelect}
-        modifiedIngredients={modifiedIngredients}
+        modifiedIngredients={customRecipeState.modifiedIngredients}
         onIngredientQuantityChange={handleIngredientQuantityChange}
         onCustomPortionsChange={(custom: string) => {
-          setCustomPortions(custom);
-          setSelectedPortionType("custom");
+          setCustomRecipeState((prev) => ({
+            ...prev,
+            customPortions: custom,
+            portionType: "custom",
+            isCustomized: true,
+          }));
         }}
         ingredients={receipt.ingredients || []}
         onApply={handleApplyPortions}
         onCancel={handleCancelPortions}
+        recipeTitle={receipt?.name || ""}
+        recipeDescription={receipt?.description || ""}
+        recipeImage={receipt?.principalPictures?.[0]?.url || ""}
       />
     </ScreenLayout>
   );
@@ -557,22 +692,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Colors.orange.orange900,
   },
-  ingredientList: {
-    backgroundColor: Colors.olive.olive50,
-    borderRadius: 10,
-    borderColor: Colors.olive.olive200,
-    borderWidth: 1,
-  },
-  ingredientText: {
-    fontSize: 16,
-    color: Colors.olive.olive800,
-    fontWeight: "bold",
-  },
-  modifiedIngredientText: {
-    fontSize: 16,
-    color: Colors.orange.orange700,
-    fontWeight: "bold",
-  },
   instructionsList: {
     paddingVertical: 0,
     marginVertical: 0,
@@ -596,80 +715,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginLeft: 20,
   },
-  commentList: {
-    borderRadius: 10,
-    marginVertical: 0,
-    gap: 10,
-  },
-  commentItem: {
-    borderWidth: 1,
-    borderRadius: 10,
-    borderColor: Colors.olive.olive200,
-    backgroundColor: Colors.olive.olive50,
-  },
-  commentHeader: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "center",
-  },
-  commentUser: {
-    fontSize: 16,
-    color: "gray",
-    fontWeight: "bold",
-  },
-  commentDate: {
-    fontSize: 16,
-    color: Colors.olive.olive800,
-  },
-  commentContent: {
-    flexDirection: "column",
-    gap: 10,
-    paddingTop: 20,
-  },
-  commentText: {
-    fontSize: 16,
-    color: Colors.olive.olive800,
-  },
-  commentRating: {
-    flexDirection: "row",
-    gap: 5,
-    width: "100%",
-    justifyContent: "flex-end",
-  },
 });
 
 export default ReceiptPage;
-
-const RatingsItem = ({ rating }: { rating: Rating }) => {
-  console.log(rating);
-  return (
-    <List.Item
-      title={
-        <View style={styles.commentHeader}>
-          <View>
-            <Text style={styles.commentUser}>{rating.name}</Text>
-            <Text style={styles.commentDate}>
-              {new Date(rating.createdAt).toLocaleDateString("es-ES")}
-            </Text>
-          </View>
-        </View>
-      }
-      description={
-        <View style={styles.commentContent}>
-          <Text style={styles.commentText}>{rating.comment}</Text>
-          <View style={styles.commentRating}>
-            {Array.from({ length: 5 }, (_, i) => (
-              <Ionicons
-                key={i}
-                name="star"
-                size={20}
-                color={i < rating.score ? Colors.orange.orange600 : "gray"}
-              />
-            ))}
-          </View>
-        </View>
-      }
-      style={styles.commentItem}
-    />
-  );
-};
