@@ -22,8 +22,8 @@ const LoginScreen: React.FC = () => {
     password: string;
   }>({
     defaultValues: {
-      email: "",
-      password: "",
+      email: "full@test.com",
+      password: "123456",
     },
   });
 

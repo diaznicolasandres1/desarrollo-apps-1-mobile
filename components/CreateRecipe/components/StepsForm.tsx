@@ -1,10 +1,18 @@
-import { PrimaryButton } from "@/components/Button";
 import { Colors } from "@/constants/Colors";
-import { Step } from "@/viewmodels/CreateRecipeViewModel";
+import { useImagePicker } from "@/hooks/useImagePicker";
+import { normalizeImageForStorage } from "@/utils/imageUtils";
+import { PrimaryButton } from "@/components/Button";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
-import { Image, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { stepsFormStyles } from "../styles/ComponentStyles";
+import { Step } from "@/viewmodels/CreateRecipeViewModel";
 
 interface StepsFormProps {
   onAdd: (step: Omit<Step, "id">) => void;
@@ -22,12 +30,9 @@ const StepsForm: React.FC<StepsFormProps> = ({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [stepImage, setStepImage] = useState<string | null>(null);
+  const { pickImage } = useImagePicker();
 
   const handleAdd = () => {
-    console.log("handleAdd called", {
-      title: title.trim(),
-      description: description.trim(),
-    });
     if (title.trim() && description.trim()) {
       onAdd({
         title: title.trim(),
@@ -37,40 +42,26 @@ const StepsForm: React.FC<StepsFormProps> = ({
       setTitle("");
       setDescription("");
       setStepImage(null);
-    } else {
-      console.log("Validation failed - title or description empty");
     }
   };
 
-  // Imágenes hardcodeadas para cada paso
-  const getStepImage = (stepNumber: number) => {
-    const stepImages = {
-      1: require("@/assets/images/paso1.png"),
-      2: require("@/assets/images/paso2.png"),
-      3: require("@/assets/images/paso3.png"),
-      4: require("@/assets/images/paso4.png"),
-      5: require("@/assets/images/paso5.png"),
-    };
 
-    // Si no hay imagen específica, usar una por defecto
-    const defaultImage = require("@/assets/images/logo.png");
 
-    return stepImages[stepNumber as keyof typeof stepImages] || defaultImage;
+  // Función para seleccionar imagen real del celular
+  const selectStepImage = async () => {
+    try {
+      const imageUri = await pickImage();
+      if (imageUri) {
+        // Convertir imagen local a base64 para almacenamiento
+        const normalizedImage = await normalizeImageForStorage(imageUri);
+        setStepImage(normalizedImage);
+      }
+    } catch (error) {
+      console.error("Error selecting step image:", error);
+    }
   };
 
-  const addStepImage = async () => {
-    // Calcular el número del próximo paso (pasos existentes + 1)
-    const nextStepNumber = steps.length + 1;
 
-    // Obtener la imagen correspondiente
-    const imageSource = getStepImage(nextStepNumber);
-
-    // Convertir require() a string para compatibilidad
-    // En React Native, podemos usar Image.resolveAssetSource para obtener la URI
-    const resolvedSource = Image.resolveAssetSource(imageSource);
-
-    setStepImage(resolvedSource.uri);
-  };
 
   return (
     <View style={stepsFormStyles.sectionContainer}>
@@ -88,11 +79,9 @@ const StepsForm: React.FC<StepsFormProps> = ({
               ) : (
                 <TouchableOpacity
                   style={stepsFormStyles.addStepImageButton}
-                  onPress={() => {
-                    addStepImage();
-                  }}
+                  onPress={selectStepImage}
                 >
-                  <Ionicons name="add" size={32} color={Colors.text} />
+                  <Ionicons name="camera-outline" size={32} color={Colors.text} />
                 </TouchableOpacity>
               )}
             </View>
@@ -158,17 +147,21 @@ const StepsForm: React.FC<StepsFormProps> = ({
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity
-                style={stepsFormStyles.addStepImageButtonForm}
-                onPress={addStepImage}
-              >
-                <Ionicons
-                  name="add"
-                  size={24}
-                  color={Colors.orange.orange700}
-                />
-                <Text style={stepsFormStyles.addImageText}>Agregar imagen</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={stepsFormStyles.addStepImageButtonForm}
+                  onPress={selectStepImage}
+                >
+                  <Ionicons
+                    name="camera-outline"
+                    size={24}
+                    color={Colors.orange.orange700}
+                  />
+                  <Text style={stepsFormStyles.addImageText}>Seleccionar foto</Text>
+                </TouchableOpacity>
+
+
+              </>
             )}
           </View>
         </View>

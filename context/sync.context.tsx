@@ -137,7 +137,6 @@ export const SyncProvider: React.FC<SyncProviderProps> = ({ children }) => {
       isSyncingRef.current = true;
       try {
         const receipts = await getReceiptsInStorage("createReceiptSync", []);
-        console.log("Checking for receipts to sync...", receipts?.length);
         if (
           receipts &&
           receipts.length > 0 &&
